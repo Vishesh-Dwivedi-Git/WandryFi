@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -281,32 +282,31 @@ export default function NavigatePage() {
 
   if (!place || !userStake) {
     return (
-      <div className="min-h-screen bg-background ancient-texture flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-accent mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your adventure...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-400 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading your adventure...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background ancient-texture">
-      {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <div className="min-h-screen bg-black">
+      <header className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <MapPin className="h-8 w-8 text-accent" />
-            <h1 className="text-2xl font-heading font-bold text-foreground">Ancient Voyager</h1>
+            <MapPin className="h-8 w-8 text-purple-400" />
+            <h1 className="text-2xl font-bold text-white">WANDRIFY</h1>
           </Link>
           <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/explore" className="text-muted-foreground hover:text-accent transition-colors">
+            <Link href="/explore" className="text-gray-300 hover:text-purple-400 transition-colors">
               Explore
             </Link>
-            <Link href="/stake" className="text-muted-foreground hover:text-accent transition-colors">
+            <Link href="/stake" className="text-gray-300 hover:text-purple-400 transition-colors">
               Stake
             </Link>
-            <Link href="/leaderboard" className="text-muted-foreground hover:text-accent transition-colors">
+            <Link href="/leaderboard" className="text-gray-300 hover:text-purple-400 transition-colors">
               Leaderboard
             </Link>
           </nav>
@@ -336,10 +336,10 @@ export default function NavigatePage() {
           {/* Mission Info */}
           <div className="grid lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-2">
-              <Card className="sketch-border ancient-texture border-border bg-card/50 backdrop-blur-sm">
+              <Card className="sketch-border bg-black/50 backdrop-blur-sm border-gray-800/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-2xl font-heading text-card-foreground">{place.name}</CardTitle>
+                    <CardTitle className="text-2xl font-heading text-white">{place.name}</CardTitle>
                     <Badge
                       className={`${
                         place.difficulty === "Easy"
@@ -356,32 +356,32 @@ export default function NavigatePage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground mb-4">{place.description}</p>
+                  <p className="text-gray-400 mb-4">{place.description}</p>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 bg-secondary/20 rounded-lg">
-                      <Clock className="h-5 w-5 text-accent mx-auto mb-1" />
+                    <div className="text-center p-3 bg-gray-900/20 rounded-lg">
+                      <Clock className="h-5 w-5 text-purple-400 mx-auto mb-1" />
                       <div className="text-sm font-medium">{timeRemaining}</div>
-                      <div className="text-xs text-muted-foreground">Remaining</div>
+                      <div className="text-xs text-gray-400">Remaining</div>
                     </div>
-                    <div className="text-center p-3 bg-secondary/20 rounded-lg">
-                      <Target className="h-5 w-5 text-accent mx-auto mb-1" />
+                    <div className="text-center p-3 bg-gray-900/20 rounded-lg">
+                      <Target className="h-5 w-5 text-purple-400 mx-auto mb-1" />
                       <div className="text-sm font-medium">
                         {distance ? `${distance.toFixed(2)} km` : "Calculating..."}
                       </div>
-                      <div className="text-xs text-muted-foreground">Distance</div>
+                      <div className="text-xs text-gray-400">Distance</div>
                     </div>
-                    <div className="text-center p-3 bg-secondary/20 rounded-lg">
-                      <Navigation className="h-5 w-5 text-accent mx-auto mb-1" />
+                    <div className="text-center p-3 bg-gray-900/20 rounded-lg">
+                      <Navigation className="h-5 w-5 text-purple-400 mx-auto mb-1" />
                       <div className="text-sm font-medium">{userStake.amount} ETH</div>
-                      <div className="text-xs text-muted-foreground">Staked</div>
+                      <div className="text-xs text-gray-400">Staked</div>
                     </div>
-                    <div className="text-center p-3 bg-secondary/20 rounded-lg">
-                      <Compass className="h-5 w-5 text-accent mx-auto mb-1" />
+                    <div className="text-center p-3 bg-gray-900/20 rounded-lg">
+                      <Compass className="h-5 w-5 text-purple-400 mx-auto mb-1" />
                       <div className="text-sm font-medium">
                         {(Number.parseFloat(userStake.amount) * place.maxReward).toFixed(3)}
                       </div>
-                      <div className="text-xs text-muted-foreground">Potential ETH</div>
+                      <div className="text-xs text-gray-400">Potential ETH</div>
                     </div>
                   </div>
                 </CardContent>
@@ -389,9 +389,9 @@ export default function NavigatePage() {
             </div>
 
             <div>
-              <Card className="sketch-border ancient-texture border-border bg-card/50 backdrop-blur-sm">
+              <Card className="sketch-border bg-black/50 backdrop-blur-sm border-gray-800/50">
                 <CardHeader>
-                  <CardTitle className="text-lg font-heading text-card-foreground">Mission Progress</CardTitle>
+                  <CardTitle className="text-lg font-heading text-white">Mission Progress</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -400,13 +400,13 @@ export default function NavigatePage() {
                         <span>Time Progress</span>
                         <span>{Math.round(progress)}%</span>
                       </div>
-                      <Progress value={progress} className="h-2" />
+                      <Progress value={progress} className="h-2 bg-gray-900/20" />
                     </div>
 
                     {locationError ? (
-                      <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-                        <AlertTriangle className="h-4 w-4 text-destructive" />
-                        <span className="text-sm text-destructive">{locationError}</span>
+                      <div className="flex items-center gap-2 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        <span className="text-sm text-red-600">{locationError}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
@@ -418,7 +418,7 @@ export default function NavigatePage() {
                     {isNearDestination && (
                       <Button
                         onClick={handleVerifyArrival}
-                        className="w-full sketch-border bg-accent hover:bg-accent/90 text-accent-foreground"
+                        className="w-full sketch-border bg-purple-400 hover:bg-purple-500 text-white"
                       >
                         Verify Arrival
                       </Button>
@@ -439,9 +439,9 @@ export default function NavigatePage() {
           </div>
 
           {/* Interactive Map */}
-          <Card className="sketch-border ancient-texture border-border bg-card/50 backdrop-blur-sm">
+          <Card className="sketch-border bg-black/50 backdrop-blur-sm border-gray-800/50">
             <CardHeader>
-              <CardTitle className="text-xl font-heading text-card-foreground">Ancient Navigation Map</CardTitle>
+              <CardTitle className="text-xl font-heading text-white">Ancient Navigation Map</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-96 rounded-lg overflow-hidden">

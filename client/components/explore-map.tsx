@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
+import { useEffect, useRef, useState } from "react"
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet"
 import { divIcon } from "leaflet"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Star, Clock, Coins } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Star, Clock, Coins, Maximize2, Minimize2, Trophy } from "lucide-react"
 import "leaflet/dist/leaflet.css"
 
 interface Place {
@@ -28,7 +29,7 @@ interface ExploreMapProps {
   onPlaceSelect: (place: Place) => void
 }
 
-// Custom marker icons for different categories
+// Custom marker icons
 const createCustomIcon = (category: string, difficulty: string) => {
   const getColor = () => {
     switch (difficulty) {
@@ -90,7 +91,6 @@ function MapController({ places }: { places: Place[] }) {
 
   useEffect(() => {
     if (places.length > 0) {
-      // Fit map to show all places
       const bounds = places.map((place) => [place.coordinates.lat, place.coordinates.lng] as [number, number])
       map.fitBounds(bounds, { padding: [20, 20] })
     }
@@ -100,8 +100,26 @@ function MapController({ places }: { places: Place[] }) {
 }
 
 export default function ExploreMap({ places, onPlaceSelect }: ExploreMapProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [darkMode, setDarkMode] = useState(true)
+
+  const indiaCenter: [number, number] = [20.5937, 78.9629]
+
+  // Simple gamification: connect places with quest path
+  const questPath = places.map((p) => [p.coordinates.lat, p.coordinates.lng])
+
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = "unset"
+    }
+
+    return () => {
+      document.body.style.overflow = "unset"
+    }
+  }, [isFullscreen])
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -118,27 +136,47 @@ export default function ExploreMap({ places, onPlaceSelect }: ExploreMapProps) {
     }
   }
 
-  // Center of India for initial view
-  const indiaCenter: [number, number] = [20.5937, 78.9629]
-
   return (
-    <div className="w-full h-full relative">
+    <div
+      className={`w-full transition-all duration-500 ${
+        isFullscreen
+          ? "fixed inset-0 z-[9999] bg-background" // Increased z-index and added background
+          : "h-full relative"
+      }`}
+    >
       <MapContainer
         ref={mapRef}
         center={indiaCenter}
         zoom={5}
-        className="w-full h-full ancient-map"
+        className={`w-full transition-all duration-500 ${
+          isFullscreen ? "h-screen" : "h-full" // Explicit height for fullscreen
+        } ancient-map`}
         style={{
-          filter: "sepia(20%) contrast(1.1) brightness(0.9)",
-          background: "#2c1810",
+          filter: darkMode ? "sepia(20%) contrast(1.1) brightness(0.8)" : "none",
+          background: darkMode ? "#1a1a1a" : "#f5f5f5",
         }}
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url={
+            darkMode
+              ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+              : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          }
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
 
         <MapController places={places} />
+
+        {/* Quest Path */}
+        {questPath.length > 1 && (
+          <Polyline
+            positions={questPath}
+            color={darkMode ? "#00ffcc" : "#0077ff"}
+            weight={3}
+            opacity={0.7}
+            dashArray="10,6"
+          />
+        )}
 
         {places.map((place) => (
           <Marker
@@ -194,26 +232,33 @@ export default function ExploreMap({ places, onPlaceSelect }: ExploreMapProps) {
         ))}
       </MapContainer>
 
-      {/* Map Legend */}
-      <div className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-3 space-y-2 text-xs">
-        <h4 className="font-semibold text-foreground">Legend</h4>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span>🏛️</span>
-            <span>Ancient</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>🔮</span>
-            <span>Mystical</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>🚀</span>
-            <span>Futuristic</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>👑</span>
-            <span>Legendary</span>
-          </div>
+      {/* Controls */}
+      <div className="absolute top-4 left-4 flex flex-col gap-2 z-[1000]">
+        {" "}
+        {/* Added z-index */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          className="bg-background/90 backdrop-blur-sm hover:bg-background" // Better visibility
+        >
+          {isFullscreen ? <Minimize2 /> : <Maximize2 />}
+        </Button>
+        <div className="flex items-center gap-2 bg-card/90 backdrop-blur-sm p-2 rounded-md">
+          <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+          <span className="text-xs text-foreground">Dark Mode</span>
+        </div>
+      </div>
+
+      {/* Gamification Overlay */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-card/90 backdrop-blur-sm border border-border rounded-full px-4 py-2 flex items-center gap-2">
+        <Trophy className="h-4 w-4 text-yellow-400" />
+        <span className="text-xs font-semibold text-foreground">XP: {places.length * 50} / 1000</span>
+        <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-yellow-400 to-orange-500"
+            style={{ width: `${(places.length * 50) / 10}%` }}
+          ></div>
         </div>
       </div>
     </div>

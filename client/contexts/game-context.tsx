@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client"
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
@@ -19,6 +20,7 @@ interface Place {
 }
 
 interface UserStake {
+  difficulty: ReactNode
   placeId: string
   placeName: string
   amount: string
@@ -230,6 +232,7 @@ export function GameProvider({ children }: GameProviderProps) {
         coordinates: place.coordinates,
         txHash,
         status: "active",
+        difficulty: undefined
       }
 
       // Save stake
