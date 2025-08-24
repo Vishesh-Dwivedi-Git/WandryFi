@@ -1,0 +1,201 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated color tokens to match ancient sci-fi theme */
+  --background: #f9f5f1; /* Soft parchment-like white */
+  --foreground: #3e2723; /* Deep dark brown for text */
+  --card: #ffffff; /* White for card backgrounds */
+  --card-foreground: #3e2723; /* Dark brown for card text */
+  --popover: #ffffff; /* White for popover backgrounds */
+  --popover-foreground: #3e2723; /* Dark brown for popover text */
+  --primary: #6b4f3a; /* Rusty brown for primary actions */
+  --primary-foreground: #ffffff; /* White text on primary buttons */
+  --secondary: #d7d2cb; /* Light gray for secondary elements */
+  --secondary-foreground: #3e2723; /* Dark brown text on secondary elements */
+  --muted: #f9f5f1; /* Soft white for muted text */
+  --muted-foreground: #3e2723; /* Dark brown for muted text */
+  --accent: #ffb74d; /* Warm golden hue for accents */
+  --accent-foreground: #3e2723; /* Dark brown for accent text */
+  --destructive: #be123c; /* Dark red for destructive actions */
+  --destructive-foreground: #ffffff; /* White text on destructive buttons */
+  --border: #d7d2cb; /* Light gray for borders */
+  --input: #ffffff; /* White for input fields */
+  --ring: #ffb74d; /* Golden hue for focus rings */
+  --chart-1: #6b4f3a; /* Rusty brown for charts */
+  --chart-2: #ffb74d; /* Warm golden for charts */
+  --chart-3: #3e2723; /* Dark brown for charts */
+  --chart-4: #d7d2cb; /* Light gray for charts */
+  --chart-5: #f9f5f1; /* Soft parchment for charts */
+  --radius: 0.5rem; /* Corner rounding for elements */
+  --sidebar: #ffffff; /* White for sidebar backgrounds */
+  --sidebar-foreground: #3e2723; /* Dark brown for sidebar text */
+  --sidebar-primary: #6b4f3a; /* Rusty brown for primary sidebar elements */
+  --sidebar-primary-foreground: #ffffff; /* White text on primary sidebar elements */
+  --sidebar-accent: #ffb74d; /* Warm golden for sidebar accents */
+  --sidebar-accent-foreground: #3e2723; /* Dark brown for sidebar accent text */
+  --sidebar-border: #d7d2cb; /* Light gray for sidebar borders */
+  --sidebar-ring: #ffb74d; /* Golden hue for sidebar focus rings */
+}
+
+.dark {
+  /* Updated dark mode tokens to maintain theme consistency */
+  --background: #2c1810; /* Dark rusty brown background */
+  --foreground: #f9f5f1; /* Light parchment text */
+  --card: #3e2723; /* Dark brown cards */
+  --card-foreground: #f9f5f1; /* Light text on cards */
+  --popover: #3e2723; /* Dark brown popovers */
+  --popover-foreground: #f9f5f1; /* Light text on popovers */
+  --primary: #ffb74d; /* Golden primary in dark mode */
+  --primary-foreground: #3e2723; /* Dark text on primary */
+  --secondary: #4a3429; /* Darker secondary */
+  --secondary-foreground: #f9f5f1; /* Light text on secondary */
+  --muted: #4a3429; /* Darker muted */
+  --muted-foreground: #d7d2cb; /* Light muted text */
+  --accent: #ffb74d; /* Golden accent */
+  --accent-foreground: #3e2723; /* Dark text on accent */
+  --destructive: #dc2626; /* Bright red for destructive */
+  --destructive-foreground: #ffffff; /* White text on destructive */
+  --border: #4a3429; /* Dark border */
+  --input: #4a3429; /* Dark input */
+  --ring: #ffb74d; /* Golden focus ring */
+  --chart-1: #ffb74d; /* Golden for charts */
+  --chart-2: #6b4f3a; /* Rusty brown for charts */
+  --chart-3: #d7d2cb; /* Light gray for charts */
+  --chart-4: #4a3429; /* Dark brown for charts */
+  --chart-5: #f9f5f1; /* Light parchment for charts */
+  --sidebar: #3e2723; /* Dark sidebar */
+  --sidebar-foreground: #f9f5f1; /* Light sidebar text */
+  --sidebar-primary: #ffb74d; /* Golden sidebar primary */
+  --sidebar-primary-foreground: #3e2723; /* Dark text on sidebar primary */
+  --sidebar-accent: #6b4f3a; /* Rusty sidebar accent */
+  --sidebar-accent-foreground: #f9f5f1; /* Light text on sidebar accent */
+  --sidebar-border: #4a3429; /* Dark sidebar border */
+  --sidebar-ring: #ffb74d; /* Golden sidebar focus ring */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Added custom fonts for ancient sci-fi theme */
+  --font-heading: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Added custom styles for ancient sci-fi aesthetic */
+  .sketch-border {
+    position: relative;
+  }
+
+  .sketch-border::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(45deg, var(--accent), var(--primary));
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0.1;
+  }
+
+  .ancient-texture {
+    background-image: radial-gradient(circle at 25% 25%, rgba(107, 79, 58, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(255, 183, 77, 0.05) 0%, transparent 50%);
+  }
+
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.6s ease-out;
+  }
+
+  .scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Added map styling for ancient theme */
+  .ancient-map .leaflet-container {
+    background: #2c1810;
+    font-family: var(--font-body);
+  }
+
+  .ancient-map .leaflet-tile {
+    filter: sepia(30%) contrast(1.2) brightness(0.8) hue-rotate(15deg);
+  }
+
+  .ancient-map .leaflet-popup-content-wrapper {
+    background: rgba(62, 39, 35, 0.95);
+    color: #f9f5f1;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 183, 77, 0.3);
+  }
+
+  .ancient-map .leaflet-popup-tip {
+    background: rgba(62, 39, 35, 0.95);
+  }
+
+  .ancient-map .leaflet-control-zoom a {
+    background: rgba(62, 39, 35, 0.9);
+    color: #f9f5f1;
+    border: 1px solid rgba(255, 183, 77, 0.3);
+  }
+
+  .ancient-map .leaflet-control-zoom a:hover {
+    background: rgba(255, 183, 77, 0.2);
+  }
+
+  .custom-marker {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+
+  .ancient-popup .leaflet-popup-content {
+    margin: 0;
+    padding: 0;
+  }
+}
