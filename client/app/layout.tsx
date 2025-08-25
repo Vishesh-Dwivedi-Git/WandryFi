@@ -1,39 +1,21 @@
-import type React from "react"
 import type { Metadata } from "next"
-import { Space_Grotesk, DM_Sans } from "next/font/google"
+import { Inter } from "next/font/google"
 import "./globals.css"
-import { Web3Provider } from "@/contexts/web3-context"
-import { GameProvider } from "@/contexts/game-context"
+import "@rainbow-me/rainbowkit/styles.css"   // ✅ Add this
+import Providers from "@/components/providers"
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-heading",
-})
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-body",
-})
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Ancient Voyager - Web3 Travel Staking",
-  description: "Stake, explore, and earn rewards on your ancient sci-fi travel adventures",
-  generator: "v0.app",
+  title: "WANDRIFY - Web3 Travel Staking",
+  description: "Decentralized travel staking platform",
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable}`}>
-      <body className="font-body antialiased">
-        <Web3Provider>
-          <GameProvider>{children}</GameProvider>
-        </Web3Provider>
+    <html lang="en">
+      <body className={inter.className}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )
