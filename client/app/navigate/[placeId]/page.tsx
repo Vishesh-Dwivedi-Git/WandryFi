@@ -1,6 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client"
+//////////////////////////////////////////////////////////////////////
 
+
+// This is incomplete needs redo 
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Canvas } from "@react-three/fiber"
@@ -10,13 +20,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { MapPin, Navigation, Clock, Target, CheckCircle, AlertTriangle, Compass } from "lucide-react"
-import { WalletConnect } from "@/components/wallet-connect"
+import { Navigation, Clock, Target, CheckCircle, AlertTriangle, Compass } from "lucide-react"
 import { AncientExplorer } from "@/components/ancient-explorer"
 import { InteractiveMap } from "@/components/interactive-map"
 import { VerificationModal } from "@/components/verification-modal"
-import Link from "next/link"
-
+import Header from "@/components/Header"
 interface Place {
   id: string
   name: string
@@ -293,26 +301,7 @@ export default function NavigatePage() {
 
   return (
     <div className="min-h-screen bg-black">
-      <header className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <MapPin className="h-8 w-8 text-purple-400" />
-            <h1 className="text-2xl font-bold text-white">WANDRIFY</h1>
-          </Link>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/explore" className="text-gray-300 hover:text-purple-400 transition-colors">
-              Explore
-            </Link>
-            <Link href="/stake" className="text-gray-300 hover:text-purple-400 transition-colors">
-              Stake
-            </Link>
-            <Link href="/leaderboard" className="text-gray-300 hover:text-purple-400 transition-colors">
-              Leaderboard
-            </Link>
-          </nav>
-          <WalletConnect />
-        </div>
-      </header>
+      <Header />
 
       <div className="pt-20">
         {/* 3D Scene Header */}

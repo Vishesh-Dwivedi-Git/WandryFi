@@ -1,121 +1,121 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Canvas } from "@react-three/fiber"
+import { OrbitControls, Environment, Float } from "@react-three/drei"
+import { Suspense, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Trophy, Coins, Users } from "lucide-react"
-import { WalletConnect } from "@/components/wallet-connect"
+import { MapPin, Trophy, Coins } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import CosmosHero from "@/components/cosmos-hero"
 import Link from "next/link"
+import { AnimatedCharacter } from "@/components/AnimatedCtar"
+import Header from "@/components/Header"
+
+
 
 export default function LandingPage() {
-  const [mounted, setMounted] = useState(false)
-
   useEffect(() => {
-    setMounted(true)
-    document.documentElement.classList.add("dark")
+    const handleScroll = () => {};
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [])
 
-  if (!mounted) return null
-
   return (
-    <div className="min-h-screen bg-black">
-      {/* Updated Header */}
-      <header className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
-            <div className="relative">
-              <MapPin className="h-8 w-8 text-purple-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">WANDRIFY</h1>
-            </div>
-          </Link>
+    <div className="min-h-screen bg-background ancient-texture">
+      {/* Header */}
+      <Header />
 
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link
-              href="/explore"
-              className="text-gray-300 hover:text-purple-400 transition-colors duration-300 font-medium"
-            >
-              Explore
-            </Link>
-            <Link
-              href="/stake"
-              className="text-gray-300 hover:text-purple-400 transition-colors duration-300 font-medium"
-            >
-              Stake
-            </Link>
-            <Link
-              href="/leaderboard"
-              className="text-gray-300 hover:text-purple-400 transition-colors duration-300 font-medium"
-            >
-              Leaderboard
-            </Link>
-          </nav>
+      {/* Hero Section with 3D Character */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Canvas camera={{ position: [0, 1.5, 5], fov: 60 }}>
+            <Suspense fallback={null}>
+              <Environment preset="sunset" />
+              <ambientLight intensity={0.5} />
+              <spotLight position={[10, 10, 10]} angle={0.3} penumbra={1} intensity={1} castShadow />
 
-          <div className="flex items-center space-x-4">
-            <div className="hidden lg:block text-sm text-gray-400">New to Web3? try our guide →</div>
-            <WalletConnect />
-          </div>
+              <Float speed={2} rotationIntensity={0.6} floatIntensity={0.8}>
+                <AnimatedCharacter />
+              </Float>
+
+              <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
+               
+              </Float>
+
+              <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.8} />
+            </Suspense>
+          </Canvas>
         </div>
-      </header>
 
-      <CosmosHero />
+        <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
+          <ScrollReveal>
+            <h1 className="text-6xl md:text-8xl font-heading font-bold mb-6 text-foreground">
+              <span className="text-accent">WandryFi</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Embark on a journey through mystical lands with stunning 3D visuals and interactive adventures.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="sketch-border bg-primary hover:bg-primary/90 text-primary-foreground">
+                Start Your Journey
+              </Button>
+              <Button size="lg" variant="outline" className="sketch-border bg-transparent">
+                Learn More
+              </Button>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
 
-      {/* Updated Features Section */}
-      <section className="py-32 px-6 relative bg-black">
+      {/* Features Section */}
+      <section className="py-20 px-4">
         <div className="container mx-auto">
           <ScrollReveal>
-            <div className="text-center mb-20">
-              <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white">How It Works</h2>
-              <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-                Experience the future of travel through blockchain-powered adventures
-              </p>
-            </div>
+            <h2 className="text-4xl md:text-6xl font-heading font-bold text-center mb-16 text-foreground">
+              How It Works
+            </h2>
           </ScrollReveal>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <ScrollReveal delay={0.2}>
-              <Card className="bg-gray-900/50 border-gray-700 backdrop-blur-sm hover:bg-gray-900/70 transition-all duration-300 group">
+              <Card className="sketch-border ancient-texture border-border bg-card/50 backdrop-blur-sm">
                 <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <Coins className="h-8 w-8 text-white" />
+                  <div className="w-16 h-16 mx-auto mb-6 bg-accent/20 rounded-full flex items-center justify-center">
+                    <Coins className="h-8 w-8 text-accent" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 text-white">Stake & Choose</h3>
-                  <p className="text-gray-400 leading-relaxed">
-                    Select your dream destination in India and stake ETH. Higher stakes unlock premium locations and
-                    bigger rewards from the community pool.
+                  <h3 className="text-2xl font-heading font-bold mb-4 text-card-foreground">Stake Your Coins</h3>
+                  <p className="text-muted-foreground">
+                    Choose a mystical destination and stake your ETH. The more you stake, the greater your potential
+                    rewards.
                   </p>
                 </CardContent>
               </Card>
             </ScrollReveal>
 
             <ScrollReveal delay={0.4}>
-              <Card className="bg-gray-900/50 border-gray-700 backdrop-blur-sm hover:bg-gray-900/70 transition-all duration-300 group">
+              <Card className="sketch-border ancient-texture border-border bg-card/50 backdrop-blur-sm">
                 <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <MapPin className="h-8 w-8 text-white" />
+                  <div className="w-16 h-16 mx-auto mb-6 bg-accent/20 rounded-full flex items-center justify-center">
+                    <MapPin className="h-8 w-8 text-accent" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 text-white">Navigate & Explore</h3>
-                  <p className="text-gray-400 leading-relaxed">
-                    Use our advanced navigation system with real-time tracking to reach your destination within the time
-                    limit. Every second counts in this epic race!
+                  <h3 className="text-2xl font-heading font-bold mb-4 text-card-foreground">Explore & Navigate</h3>
+                  <p className="text-muted-foreground">
+                    Use our ancient maps to navigate to your chosen destination within the time limit.
                   </p>
                 </CardContent>
               </Card>
             </ScrollReveal>
 
             <ScrollReveal delay={0.6}>
-              <Card className="bg-gray-900/50 border-gray-700 backdrop-blur-sm hover:bg-gray-900/70 transition-all duration-300 group">
+              <Card className="sketch-border ancient-texture border-border bg-card/50 backdrop-blur-sm">
                 <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <Trophy className="h-8 w-8 text-white" />
+                  <div className="w-16 h-16 mx-auto mb-6 bg-accent/20 rounded-full flex items-center justify-center">
+                    <Trophy className="h-8 w-8 text-accent" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 text-white">Win or Lose</h3>
-                  <p className="text-gray-400 leading-relaxed">
-                    Reach your destination to claim massive rewards from the community pool. Fail, and your stake feeds
-                    the pool for other adventurers.
+                  <h3 className="text-2xl font-heading font-bold mb-4 text-card-foreground">Earn Rewards</h3>
+                  <p className="text-muted-foreground">
+                    Successfully reach your destination to earn rewards. Fail, and your stake goes to the community
+                    pool.
                   </p>
                 </CardContent>
               </Card>
@@ -125,25 +125,25 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-32 px-6 relative bg-gradient-to-br from-black via-purple-950/20 to-black">
+      <section className="py-20 px-4 bg-secondary/20">
         <div className="container mx-auto">
           <ScrollReveal>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto text-center">
-              <div className="bg-gray-900/30 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-900/50 transition-all duration-300">
-                <div className="text-4xl md:text-5xl font-bold text-purple-400 mb-4">2.4K</div>
-                <div className="text-gray-400 text-lg">Active Travelers</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto text-center">
+              <div>
+                <div className="text-4xl md:text-6xl font-heading font-bold text-accent mb-2">1.2K</div>
+                <div className="text-muted-foreground">Active Explorers</div>
               </div>
-              <div className="bg-gray-900/30 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-900/50 transition-all duration-300">
-                <div className="text-4xl md:text-5xl font-bold text-cyan-400 mb-4">1.2K</div>
-                <div className="text-gray-400 text-lg">ETH Staked</div>
+              <div>
+                <div className="text-4xl md:text-6xl font-heading font-bold text-accent mb-2">847</div>
+                <div className="text-muted-foreground">ETH Staked</div>
               </div>
-              <div className="bg-gray-900/30 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-900/50 transition-all duration-300">
-                <div className="text-4xl md:text-5xl font-bold text-green-400 mb-4">28</div>
-                <div className="text-gray-400 text-lg">Destinations</div>
+              <div>
+                <div className="text-4xl md:text-6xl font-heading font-bold text-accent mb-2">156</div>
+                <div className="text-muted-foreground">Destinations</div>
               </div>
-              <div className="bg-gray-900/30 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-900/50 transition-all duration-300">
-                <div className="text-4xl md:text-5xl font-bold text-pink-400 mb-4">87%</div>
-                <div className="text-gray-400 text-lg">Success Rate</div>
+              <div>
+                <div className="text-4xl md:text-6xl font-heading font-bold text-accent mb-2">92%</div>
+                <div className="text-muted-foreground">Success Rate</div>
               </div>
             </div>
           </ScrollReveal>
@@ -151,52 +151,32 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 px-6 relative bg-black">
+      <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <ScrollReveal>
-            <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white">
-              Ready for Your{" "}
-              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Epic Journey?
-              </span>
+            <h2 className="text-4xl md:text-6xl font-heading font-bold mb-8 text-foreground">
+              Ready for Your <span className="text-accent">Adventure?</span>
             </h2>
-            <p className="text-xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Join thousands of adventurers exploring India&apos;s most incredible destinations. Your next legendary
-              adventure is just one stake away.
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Join thousands of explorers on epic journeys across mystical lands. Your next adventure awaits.
             </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Link href="/explore">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105"
-                >
-                  <Users className="mr-3 h-5 w-5" />
-                  Start Your Journey
-                </Button>
-              </Link>
-              <Link href="/leaderboard">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white px-8 py-4 rounded-full transition-all duration-300 bg-transparent"
-                >
-                  <Trophy className="mr-3 h-5 w-5" />
-                  View Leaderboard
-                </Button>
-              </Link>
-            </div>
+            <Link href="/explore">
+              <Button size="lg" className="sketch-border bg-accent hover:bg-accent/90 text-accent-foreground">
+                Begin Exploration
+              </Button>
+            </Link>
           </ScrollReveal>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-16 px-6 bg-black">
+      <footer className="border-t border-border py-12 px-4">
         <div className="container mx-auto text-center">
-          <div className="flex items-center justify-center space-x-2 mb-6">
-            <MapPin className="h-8 w-8 text-purple-400" />
-            <span className="text-2xl font-bold text-white">Wandrify</span>
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <MapPin className="h-6 w-6 text-accent" />
+            <span className="text-xl font-heading font-bold">WandryFi</span>
           </div>
-          <p className="text-gray-400 text-lg">Explore India. Stake Smart. Win Big.</p>
+          <p className="text-muted-foreground">Explore the unknown. Stake your future. Earn your legend.</p>
         </div>
       </footer>
     </div>

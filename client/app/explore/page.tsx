@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client"
 
 import { useState, Suspense } from "react"
@@ -8,15 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MapPin, Clock, Coins, Star, Search, Map, List } from "lucide-react"
-import { WalletConnect } from "@/components/wallet-connect"
-import { AncientExplorer } from "@/components/ancient-explorer"
+import { Clock, Coins, Star, Search, Map, List } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { PlaceStakeModal } from "@/components/place-stake-modal"
 import dynamic from "next/dynamic"
-import Link from "next/link"
-import Image from "next/image"
-
+import Header from "@/components/Header"
+import { AnimatedCharacter } from "@/components/AnimatedCtar"
 const ExploreMap = dynamic(() => import("@/components/explore-map"), { ssr: false })
 
 interface Place {
@@ -249,27 +247,9 @@ export default function ExplorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <header className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <MapPin className="h-8 w-8 text-purple-400" />
-            <h1 className="text-2xl font-bold text-white">WANDRIFY</h1>
-          </Link>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/explore" className="text-purple-400 font-medium">
-              Explore
-            </Link>
-            <Link href="/stake" className="text-gray-300 hover:text-purple-400 transition-colors">
-              Stake
-            </Link>
-            <Link href="/leaderboard" className="text-gray-300 hover:text-purple-400 transition-colors">
-              Leaderboard
-            </Link>
-          </nav>
-          <WalletConnect />
-        </div>
-      </header>
+    <div className="min-h-screen bg-background ancient-texture">
+      {/* Header */}
+      <Header />
 
       {/* Hero Section with 3D */}
       <section className="relative h-96 flex items-center justify-center overflow-hidden mt-20">
@@ -281,7 +261,9 @@ export default function ExplorePage() {
               <pointLight position={[10, 10, 10]} />
 
               <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
-                <AncientExplorer position={[0, -1, 0]} />
+                {/* <AncientExplorer position={[0, -1, 0]} /> */}
+                <AnimatedCharacter />
+
               </Float>
 
               <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.3} />
@@ -291,11 +273,11 @@ export default function ExplorePage() {
 
         <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
           <ScrollReveal>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 text-white">
-              Explore <span className="text-purple-400">Incredible India</span>
+            <h1 className="text-4xl md:text-6xl font-heading font-bold mb-4 text-foreground">
+              Explore <span className="text-accent">Incredible India</span>
             </h1>
-            <p className="text-lg text-gray-300 mb-8">
-              Stake your coins and embark on mystical adventures across India&apos;s most legendary destinations
+            <p className="text-lg text-muted-foreground mb-8">
+              Stake your coins and embark on mystical adventures across India's most legendary destinations
             </p>
           </ScrollReveal>
         </div>
@@ -306,12 +288,12 @@ export default function ExplorePage() {
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-300" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search destinations across India..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 border border-gray-800/50 bg-black/50 backdrop-blur-sm"
+                className="pl-10 sketch-border bg-card/50 backdrop-blur-sm"
               />
             </div>
 
@@ -319,7 +301,7 @@ export default function ExplorePage() {
               <select
                 value={selectedDifficulty}
                 onChange={(e) => handleDifficultyFilter(e.target.value)}
-                className="px-4 py-2 rounded-md border border-gray-800/50 bg-black/50 backdrop-blur-sm text-white"
+                className="px-4 py-2 rounded-md border border-border bg-card/50 backdrop-blur-sm text-foreground"
               >
                 <option value="All">All Difficulties</option>
                 <option value="Easy">Easy</option>
@@ -331,7 +313,7 @@ export default function ExplorePage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => handleCategoryFilter(e.target.value)}
-                className="px-4 py-2 rounded-md border border-gray-800/50 bg-black/50 backdrop-blur-sm text-white"
+                className="px-4 py-2 rounded-md border border-border bg-card/50 backdrop-blur-sm text-foreground"
               >
                 <option value="All">All Categories</option>
                 <option value="Ancient">Ancient</option>
@@ -349,11 +331,11 @@ export default function ExplorePage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
               <TabsTrigger value="list" className="flex items-center gap-2">
-                <List className="h-4 w-4 text-white" />
+                <List className="h-4 w-4" />
                 List View
               </TabsTrigger>
               <TabsTrigger value="map" className="flex items-center gap-2">
-                <Map className="h-4 w-4 text-white" />
+                <Map className="h-4 w-4" />
                 Map View
               </TabsTrigger>
             </TabsList>
@@ -362,56 +344,54 @@ export default function ExplorePage() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPlaces.map((place, index) => (
                   <ScrollReveal key={place.id} delay={index * 0.1}>
-                    <Card className="border border-gray-800/50 bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-all duration-300 group cursor-pointer">
+                    <Card className="sketch-border ancient-texture border-border bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-all duration-300 group cursor-pointer">
                       <CardHeader className="p-0">
                         <div className="relative h-48 overflow-hidden rounded-t-lg">
-                          <Image
+                          <img
                             src={place.image || "/placeholder.svg"}
                             alt={place.name}
-                            width={500}
-                            height={300}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           <div className="absolute top-4 left-4 flex gap-2">
                             <Badge className={`${getDifficultyColor(place.difficulty)} border`}>
                               {place.difficulty}
                             </Badge>
-                            <Badge variant="outline" className="bg-black/80 backdrop-blur-sm">
+                            <Badge variant="outline" className="bg-background/80 backdrop-blur-sm">
                               {place.category}
                             </Badge>
                           </div>
                           <div className="absolute top-4 right-4">
-                            <div className="flex items-center gap-1 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1">
-                              <Star className="h-3 w-3 text-purple-400 fill-current" />
+                            <div className="flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1">
+                              <Star className="h-3 w-3 text-accent fill-current" />
                               <span className="text-xs font-medium">{place.successRate}%</span>
                             </div>
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent className="p-6">
-                        <CardTitle className="text-xl font-bold mb-2 text-white">{place.name}</CardTitle>
-                        <p className="text-gray-300 text-sm mb-4 line-clamp-2">{place.description}</p>
+                        <CardTitle className="text-xl font-heading mb-2 text-card-foreground">{place.name}</CardTitle>
+                        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{place.description}</p>
 
                         <div className="space-y-3">
                           <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4 text-purple-400" />
+                              <Clock className="h-4 w-4 text-accent" />
                               <span>{place.timeLimit}h limit</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Coins className="h-4 w-4 text-purple-400" />
+                              <Coins className="h-4 w-4 text-accent" />
                               <span>{place.minStake} ETH min</span>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-300">Reward: up to {place.maxReward}x</span>
-                            <span className="text-gray-300">{place.currentStakes} ETH staked</span>
+                            <span className="text-muted-foreground">Reward: up to {place.maxReward}x</span>
+                            <span className="text-muted-foreground">{place.currentStakes} ETH staked</span>
                           </div>
 
                           <Button
                             onClick={() => setSelectedPlace(place)}
-                            className="w-full border border-gray-800/50 bg-purple-400 hover:bg-purple-500 text-white"
+                            className="w-full sketch-border bg-accent hover:bg-accent/90 text-accent-foreground"
                           >
                             Stake & Explore
                           </Button>
@@ -424,7 +404,7 @@ export default function ExplorePage() {
             </TabsContent>
 
             <TabsContent value="map" className="space-y-6">
-              <div className="h-[600px] rounded-lg overflow-hidden border border-gray-800/50">
+              <div className="h-[600px] rounded-lg overflow-hidden sketch-border">
                 <ExploreMap places={filteredPlaces} onPlaceSelect={setSelectedPlace} />
               </div>
             </TabsContent>
