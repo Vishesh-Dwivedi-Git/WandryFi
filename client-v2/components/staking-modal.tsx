@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X } from "lucide-react"
 import { useWanderfy } from "@/contexts/wanderify-context"
+import { useWriteContract } from "wagmi"
+import { WanderifyContract } from "@/lib/contract"
+import { parseEther } from "viem"
 
 interface Destination {
   id: string
@@ -26,10 +29,21 @@ interface StakingModalProps {
 export default function StakingModal({ destination, onClose, onAcceptQuest }: StakingModalProps) {
   const [stakeAmount, setStakeAmount] = useState("")
   const { acceptQuest } = useWanderfy()
+  const { writeContract } = useWriteContract()
 
   const handleAcceptQuest = () => {
     const amount = Number.parseFloat(stakeAmount)
     if (amount > 0) {
+      const travelDate = new Date()
+      travelDate.setDate(travelDate.getDate() + 15)
+      const travelDateInSeconds = Math.floor(travelDate.getTime() / 1000)
+
+      writeContract({
+        ...WanderifyContract,
+        functionName: "stake",
+        args: [BigInt(destination.id), BigInt(travelDateInSeconds)],
+        value: parseEther(stakeAmount),
+      })
       acceptQuest(destination, amount)
       onAcceptQuest(amount)
     }
