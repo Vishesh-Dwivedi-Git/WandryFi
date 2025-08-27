@@ -1,29 +1,66 @@
-// app/explore/page.tsx
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { useWanderfy } from "../contexts/wanderify-context"
-import StakingModal from "@/components/staking-modal"
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
-import L from "leaflet"
-import "leaflet/dist/leaflet.css"
-import Image from "next/image"
-import { MapPin, Trophy, Users, Clock } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useWanderfy } from "../contexts/wanderify-context";
+import StakingModal from "@/components/staking-modal";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import Image from "next/image";
+import { MapPin, Trophy, Users, Clock } from "lucide-react";
+import dynamic from "next/dynamic";
+import { JSX } from "react/jsx-runtime";
 
-// ✅ Clean Solid Marker Icons
-const createCustomIcon = (difficulty: string, isStaked: boolean = false, isActive: boolean = false) => {
-  const colors = {
-    Easy: "#00D4FF",     // Bright cyan
-    Medium: "#FF9500",   // Orange
-    Hard: "#FF4D94",     // Pink
-  }
+// ✅ Dynamically import react-leaflet components
+const MapContainer = dynamic(
+  () => import("react-leaflet").then(mod => mod.MapContainer),
+  { ssr: false }
+);
 
-  const color = colors[difficulty as keyof typeof colors] || "#00D4FF"
-  const size = isActive ? 40 : isStaked ? 36 : 32
+const TileLayer = dynamic(
+  () => import("react-leaflet").then(mod => mod.TileLayer),
+  { ssr: false }
+);
 
+const Marker = dynamic(
+  () => import("react-leaflet").then(mod => mod.Marker),
+  { ssr: false }
+);
+
+const Popup = dynamic(
+  () => import("react-leaflet").then(mod => mod.Popup),
+  { ssr: false }
+);
+
+// ✅ Proper interface definitions
+interface Destination {
+  id: string;
+  name: string;
+  image: string;
+  rewardPool: number;
+  difficulty: "Easy" | "Medium" | "Hard";
+  description: string;
+  coordinates: { x: number; y: number };
+  participants?: number;
+  estimatedTime?: string;
+  tags?: string[];
+}
+
+// ✅ Type-safe icon creation function
+const createCustomIcon = (difficulty: string, isStaked: boolean = false, isActive: boolean = false): L.DivIcon | null => {
+  if (typeof window === "undefined" || !L) return null;
+  
+  const colors: Record<string, string> = {
+    Easy: "#00D4FF",
+    Medium: "#FF9500",
+    Hard: "#FF4D94",
+  };
+  
+  const color = colors[difficulty] || "#00D4FF";
+  const size = isActive ? 40 : isStaked ? 36 : 32;
+  
   return L.divIcon({
     html: `
       <div class="relative">
@@ -44,22 +81,49 @@ const createCustomIcon = (difficulty: string, isStaked: boolean = false, isActiv
     className: "custom-marker",
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
-  })
+  });
+};
+
+// ✅ Type-safe MapStyle component
+function MapStyle(): null {
+  const { useMap } = require("react-leaflet");
+  const map = useMap();
+
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      .leaflet-container {
+        background: #000000 !important;
+      }
+      .leaflet-tile {
+        filter: none !important;
+      }
+      .leaflet-control {
+        background: #000000 !important;
+        border: 1px solid #333333 !important;
+        border-radius: 4px !important;
+      }
+      .leaflet-popup-content-wrapper {
+        background: #000000 !important;
+        border: 1px solid #333333 !important;
+        border-radius: 6px !important;
+        color: #FFFFFF !important;
+      }
+      .leaflet-popup-tip {
+        background: #000000 !important;
+        border: 1px solid #333333 !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, [map]);
+  
+  return null;
 }
 
-interface Destination {
-  id: string
-  name: string
-  image: string
-  rewardPool: number
-  difficulty: "Easy" | "Medium" | "Hard"
-  description: string
-  coordinates: { x: number; y: number }
-  participants?: number
-  estimatedTime?: string
-  tags?: string[]
-}
-
+// ✅ Destinations data
 const destinations: Destination[] = [
   {
     id: "1",
@@ -181,80 +245,48 @@ const destinations: Destination[] = [
     estimatedTime: "1 day",
     tags: ["Twin Falls", "Photography", "River"]
   }
-]
-
-// ✅ Clean Map Styling
-function MapStyle() {
-  const map = useMap()
-
-  useEffect(() => {
-    const style = document.createElement("style")
-    style.textContent = `
-      .leaflet-container {
-        background: #000000 !important;
-      }
-      .leaflet-tile {
-        filter: none !important; /* Keep dark map theme */
-      }
-      .leaflet-control {
-        background: #000000 !important;
-        border: 1px solid #333333 !important;
-        border-radius: 4px !important;
-      }
-      .leaflet-popup-content-wrapper {
-        background: #000000 !important;
-        border: 1px solid #333333 !important;
-        border-radius: 6px !important;
-        color: #FFFFFF !important;
-      }
-      .leaflet-popup-tip {
-        background: #000000 !important;
-        border: 1px solid #333333 !important;
-      }
-    `
-    document.head.appendChild(style)
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
-
-  return null
-}
+];
 
 export default function ExplorePage() {
-  const [viewMode, setViewMode] = useState<"map" | "list">("list")
-  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null)
-  const [filterDifficulty, setFilterDifficulty] = useState<string>("all")
-  const { isQuestActive, isQuestStaked } = useWanderfy()
+  const [viewMode, setViewMode] = useState<"map" | "list">("list");
+  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+  const [filterDifficulty, setFilterDifficulty] = useState<string>("all");
+  const [mounted, setMounted] = useState(false);
+  const { isQuestActive, isQuestStaked } = useWanderfy();
 
-  const getDifficultyColor = (difficulty: string) => {
+  // ✅ Ensure component is mounted before rendering map
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const getDifficultyColor = (difficulty: string): string => {
     switch (difficulty) {
       case "Easy":
-        return "text-[#00D4FF] border-[#00D4FF]"
+        return "text-[#00D4FF] border-[#00D4FF]";
       case "Medium":
-        return "text-[#FF9500] border-[#FF9500]"
+        return "text-[#FF9500] border-[#FF9500]";
       case "Hard":
-        return "text-[#FF4D94] border-[#FF4D94]"
+        return "text-[#FF4D94] border-[#FF4D94]";
       default:
-        return "text-[#666666] border-[#666666]"
+        return "text-[#666666] border-[#666666]";
     }
-  }
+  };
 
-  const getStatusBadge = (destination: Destination) => {
+  const getStatusBadge = (destination: Destination): JSX.Element => {
     if (isQuestActive(destination.id)) {
-      return <Badge className="bg-[#00D4FF] text-black font-pixel">Active Quest</Badge>
+      return <Badge className="bg-[#00D4FF] text-black font-pixel">Active Quest</Badge>;
     }
     if (isQuestStaked(destination.id)) {
-      return <Badge className="bg-[#666666] text-white font-pixel">Staked</Badge>
+      return <Badge className="bg-[#666666] text-white font-pixel">Staked</Badge>;
     }
-    return <Badge className="bg-[#000000] text-[#00D4FF] border border-[#333333] font-pixel">Available</Badge>
-  }
+    return <Badge className="bg-[#000000] text-[#00D4FF] border border-[#333333] font-pixel">Available</Badge>;
+  };
 
   const filteredDestinations = filterDifficulty === "all"
     ? destinations
-    : destinations.filter(dest => dest.difficulty === filterDifficulty)
+    : destinations.filter(dest => dest.difficulty === filterDifficulty);
 
-  const mapCenter: [number, number] = [13.5, 76.0]
+  const mapCenter: [number, number] = [13.5, 76.0];
 
   return (
     <div className="min-h-screen bg-[#000000] p-6">
@@ -273,7 +305,7 @@ export default function ExplorePage() {
             <div className="flex items-center space-x-2">
               <span className="text-sm text-[#FFFFFF]">Difficulty:</span>
               <div className="flex bg-[#000000] rounded-lg p-1 border border-[#333333]">
-                {["all", "Easy", "Medium", "Hard"].map((level) => (
+                {(["all", "Easy", "Medium", "Hard"] as const).map((level) => (
                   <Button
                     key={level}
                     variant="ghost"
@@ -318,7 +350,7 @@ export default function ExplorePage() {
         </div>
 
         {/* Map View */}
-        {viewMode === "map" && (
+        {viewMode === "map" && mounted && (
           <div className="relative bg-[#000000] border border-[#333333] rounded-lg overflow-hidden h-[650px]">
             <MapContainer
               center={mapCenter}
@@ -328,49 +360,55 @@ export default function ExplorePage() {
             >
               <MapStyle />
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              {filteredDestinations.map((destination) => (
-                <Marker
-                  key={destination.id}
-                  position={[destination.coordinates.x, destination.coordinates.y]}
-                  icon={createCustomIcon(
-                    destination.difficulty,
-                    isQuestStaked(destination.id),
-                    isQuestActive(destination.id)
-                  )}
-                  eventHandlers={{
-                    click: () => !isQuestStaked(destination.id) && setSelectedDestination(destination),
-                  }}
-                >
-                  <Popup>
-                    <div className="p-3 bg-[#000000] text-[#FFFFFF]">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-pixel text-lg text-[#00D4FF]">{destination.name}</h3>
-                        {getStatusBadge(destination)}
-                      </div>
-                      <p className="text-sm text-[#FFFFFF] mb-3">{destination.description}</p>
-                      <div className="flex items-center justify-between text-xs mb-3">
-                        <div className="flex items-center space-x-2">
-                          <Trophy className="w-3 h-3 text-[#FF9500]" />
-                          <span className="text-[#FF9500] font-bold">{destination.rewardPool} WNDR</span>
+              {filteredDestinations.map((destination) => {
+                const icon = createCustomIcon(
+                  destination.difficulty,
+                  isQuestStaked(destination.id),
+                  isQuestActive(destination.id)
+                );
+                
+                if (!icon) return null;
+                
+                return (
+                  <Marker
+                    key={destination.id}
+                    position={[destination.coordinates.x, destination.coordinates.y]}
+                    icon={icon}
+                    eventHandlers={{
+                      click: () => !isQuestStaked(destination.id) && setSelectedDestination(destination),
+                    }}
+                  >
+                    <Popup>
+                      <div className="p-3 bg-[#000000] text-[#FFFFFF]">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="font-pixel text-lg text-[#00D4FF]">{destination.name}</h3>
+                          {getStatusBadge(destination)}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Users className="w-3 h-3 text-[#FFFFFF]" />
-                          <span className="text-[#FFFFFF]">{destination.participants}</span>
+                        <p className="text-sm text-[#FFFFFF] mb-3">{destination.description}</p>
+                        <div className="flex items-center justify-between text-xs mb-3">
+                          <div className="flex items-center space-x-2">
+                            <Trophy className="w-3 h-3 text-[#FF9500]" />
+                            <span className="text-[#FF9500] font-bold">{destination.rewardPool} WNDR</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Users className="w-3 h-3 text-[#FFFFFF]" />
+                            <span className="text-[#FFFFFF]">{destination.participants}</span>
+                          </div>
                         </div>
+                        {!isQuestStaked(destination.id) && (
+                          <Button
+                            size="sm"
+                            className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
+                            onClick={() => setSelectedDestination(destination)}
+                          >
+                            Start Quest
+                          </Button>
+                        )}
                       </div>
-                      {!isQuestStaked(destination.id) && (
-                        <Button
-                          size="sm"
-                          className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
-                          onClick={() => setSelectedDestination(destination)}
-                        >
-                          Start Quest
-                        </Button>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+                    </Popup>
+                  </Marker>
+                );
+              })}
             </MapContainer>
           </div>
         )}
@@ -442,8 +480,8 @@ export default function ExplorePage() {
                     <Button
                       className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedDestination(destination)
+                        e.stopPropagation();
+                        setSelectedDestination(destination);
                       }}
                     >
                       {isQuestActive(destination.id) ? "View Quest" : "Start Quest"}
@@ -464,13 +502,13 @@ export default function ExplorePage() {
           <StakingModal
             destination={selectedDestination}
             onClose={() => setSelectedDestination(null)}
-            onAcceptQuest={(amount) => {
-              console.log(`Accepted quest for ${selectedDestination.name} with ${amount} WNDR`)
-              setSelectedDestination(null)
+            onAcceptQuest={(amount: number) => {
+              console.log(`Accepted quest for ${selectedDestination.name} with ${amount} WNDR`);
+              setSelectedDestination(null);
             }}
           />
         )}
       </div>
     </div>
-  )
+  );
 }
