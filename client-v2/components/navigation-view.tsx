@@ -1,213 +1,658 @@
 "use client"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { X, Navigation, Target, MapPin, Loader2, AlertCircle } from "lucide-react"
 import { useWanderfy } from "@/contexts/wanderify-context"
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-leaflet"
+import L from "leaflet"
+import "leaflet/dist/leaflet.css"
 
 interface NavigationViewProps {
   onClose: () => void
 }
 
-export default function NavigationView({ onClose }: NavigationViewProps) {
-  const [isCheckedIn, setIsCheckedIn] = useState(false)
-  const [pulseAnimation, setPulseAnimation] = useState(true)
-  const { activeQuests, completeQuest } = useWanderfy()
+interface UserLocation {
+  lat: number
+  lng: number
+  accuracy: number
+  timestamp: number
+  heading?: number
+  speed?: number
+}
+
+interface QuestDestination {
+  id: string
+  name: string
+  lat: number
+  lng: number
+  stakeAmount: number
+  image: string
+  timeRemaining: number
+  status: "in-progress" | "ready-for-checkin"
+}
+
+// ✅ Utility function to calculate distance between two points (Haversine formula)
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371000; // Earth radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; // Distance in meters
+}
+
+// ✅ Minimalist Custom icons
+const createUserIcon = (heading?: number) => {
+  return L.divIcon({
+    html: `
+      <div class="relative">
+        <div class="absolute inset-0 w-8 h-8 bg-cyan-400 rounded-full animate-ping opacity-75"></div>
+        <div class="relative w-8 h-8 bg-cyan-400 rounded-full border-2 border-white shadow-lg flex items-center justify-center" ${heading !== undefined ? `style="transform: rotate(${heading}deg)"` : ''}>
+          <div class="w-3 h-3 bg-black rounded-full"></div>
+          ${heading !== undefined ? '<div class="absolute -top-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-black"></div>' : ''}
+        </div>
+      </div>
+    `,
+    className: "user-location-marker",
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  })
+}
+
+const createDestinationIcon = (isActive: boolean = false, distance?: number) => {
+  let color = '#ef4444'; // red by default
+  if (distance && distance <= 100) color = '#10b981'; // green
+  else if (distance && distance <= 500) color = '#f59e0b'; // amber
+  
+  return L.divIcon({
+    html: `
+      <div class="relative">
+        <div class="relative w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center ${isActive ? 'animate-pulse' : ''}" style="background-color: ${color}">
+          <svg viewBox="0 0 24 24" class="w-5 h-5 text-white" fill="currentColor">
+            <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>
+          </svg>
+        </div>
+        ${distance !== undefined ? `<div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap">${Math.round(distance)}m</div>` : ''}
+      </div>
+    `,
+    className: "destination-marker",
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  })
+}
+
+// ✅ Location Tracker
+function LocationTracker({ 
+  onLocationUpdate, 
+  onError 
+}: { 
+  onLocationUpdate: (location: UserLocation) => void;
+  onError: (error: string) => void;
+}) {
+  const map = useMap()
 
   useEffect(() => {
-    // Simulate arrival at destination after 3 seconds
-    const timer = setTimeout(() => {
-      setPulseAnimation(false)
-    }, 3000)
+    let watchId: number | null = null
 
-    return () => clearTimeout(timer)
-  }, [])
+    const startTracking = () => {
+      if (!navigator.geolocation) {
+        onError("Geolocation is not supported by this browser.")
+        return
+      }
 
-  const handleCheckIn = () => {
-    setIsCheckedIn(true)
+      const options: PositionOptions = {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 2000
+      }
 
-    // Find the ready quest and complete it
-    const readyQuest = activeQuests.find((q) => q.status === "ready-for-checkin")
-    if (readyQuest) {
-      completeQuest(readyQuest.id)
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const location: UserLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy || 10,
+            timestamp: position.timestamp,
+            heading: position.coords.heading || undefined,
+            speed: position.coords.speed || undefined
+          }
+          onLocationUpdate(location)
+          onError("")
+        },
+        (error) => {
+          let errorMessage = "Location error: "
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += "Location access denied by user"
+              break
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += "Location information unavailable"
+              break
+            case error.TIMEOUT:
+              errorMessage += "Location request timed out"
+              break
+            default:
+              errorMessage += "An unknown error occurred"
+              break
+          }
+          onError(errorMessage)
+          
+          // Fallback to default location (Bangalore)
+          onLocationUpdate({
+            lat: 12.9716,
+            lng: 77.5946,
+            accuracy: 1000,
+            timestamp: Date.now()
+          })
+        },
+        options
+      )
     }
 
-    // Simulate check-in process
+    startTracking()
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId)
+      }
+    }
+  }, [map, onLocationUpdate, onError])
+
+  return null
+}
+
+// ✅ Navigation Controller
+function NavigationController({ 
+  userLocation, 
+  activeDestination, 
+  onDistanceUpdate 
+}: { 
+  userLocation: UserLocation | null
+  activeDestination: QuestDestination | null
+  onDistanceUpdate: (distance: number) => void 
+}) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (userLocation && activeDestination) {
+      const distance = calculateDistance(
+        userLocation.lat, 
+        userLocation.lng, 
+        activeDestination.lat, 
+        activeDestination.lng
+      )
+      onDistanceUpdate(distance)
+
+      const mapCenter = map.getCenter()
+      const centerDistance = calculateDistance(
+        mapCenter.lat, 
+        mapCenter.lng, 
+        userLocation.lat, 
+        userLocation.lng
+      )
+
+      if (centerDistance > 100) {
+        const bounds = L.latLngBounds([
+          [userLocation.lat, userLocation.lng],
+          [activeDestination.lat, activeDestination.lng]
+        ])
+        map.flyToBounds(bounds, { 
+          padding: [80, 80],
+          maxZoom: 16,
+          duration: 1.5
+        })
+      }
+    } else if (userLocation) {
+      map.flyTo([userLocation.lat, userLocation.lng], 15, { duration: 1 })
+    }
+  }, [userLocation, activeDestination, map, onDistanceUpdate])
+
+  return null
+}
+
+export default function NavigationView({ onClose }: NavigationViewProps) {
+  const { activeQuests, stakedQuests, completeQuest, isQuestStaked } = useWanderfy()
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null)
+  const [locationError, setLocationError] = useState<string>("")
+  const [selectedDestination, setSelectedDestination] = useState<QuestDestination | null>(null)
+  const [fullScreenQuest, setFullScreenQuest] = useState<QuestDestination | null>(null)
+  const [distanceToDestination, setDistanceToDestination] = useState<number>(Infinity)
+  const [isCheckedIn, setIsCheckedIn] = useState(false)
+  const [checkingIn, setCheckingIn] = useState(false)
+
+  // ✅ ONLY show destinations that are staked
+  const questDestinations: QuestDestination[] = activeQuests
+    .filter(
+      quest =>
+        isQuestStaked(quest.destinationId) &&
+        (quest.status === "in-progress" || quest.status === "ready-for-checkin")
+    )
+    .map((quest, index) => {
+      const coordinates = {
+        "1": { lat: 13.3428, lng: 77.1234 }, // Nrupatunga Betta
+        "3": { lat: 15.3350, lng: 76.4600 }, // Hampi Ruins  
+        "4": { lat: 12.3375, lng: 75.8069 }, // Coorg Coffee Plantations
+        "2": { lat: 13.2846, lng: 77.0436 }, // Mystic Falls
+        "5": { lat: 14.5492, lng: 74.3200 }, // Gokarna Beach Trek
+        "6": { lat: 13.3931, lng: 75.7208 }, // Mullayanagiri Peak
+        "7": { lat: 14.2290, lng: 74.8131 }, // Jog Falls
+        "8": { lat: 15.9149, lng: 75.6767 }, // Badami Caves
+        "9": { lat: 15.2593, lng: 74.6253 }, // Dandeli Wildlife Sanctuary
+        "10": { lat: 12.2897, lng: 77.1711 }, // Shivanasamudra Falls
+      }
+
+      const coords = coordinates[quest.destinationId as keyof typeof coordinates] || 
+                     { lat: 12.9716 + (index * 0.1), lng: 77.5946 + (index * 0.1) }
+
+      return {
+        id: quest.id,
+        name: quest.destinationName,
+        lat: coords.lat,
+        lng: coords.lng,
+        stakeAmount: quest.stakeAmount,
+        image: quest.image,
+        timeRemaining: quest.timeRemaining,
+        status: quest.status as "in-progress" | "ready-for-checkin"
+      }
+    })
+
+  const handleLocationUpdate = useCallback((location: UserLocation) => {
+    setUserLocation(location)
+  }, [])
+
+  const handleLocationError = useCallback((error: string) => {
+    setLocationError(error)
+  }, [])
+
+  const handleDistanceUpdate = useCallback((distance: number) => {
+    setDistanceToDestination(distance)
+  }, [])
+
+  const handleQuestSelect = useCallback((quest: QuestDestination) => {
+    setSelectedDestination(quest)
+    setFullScreenQuest(quest)
+  }, [])
+
+  const handleCheckIn = async () => {
+    if (!fullScreenQuest || distanceToDestination > 50) return
+
+    setCheckingIn(true)
+    
     setTimeout(() => {
-      onClose()
-    }, 2000)
+      setIsCheckedIn(true)
+      completeQuest(fullScreenQuest.id)
+      
+      setTimeout(() => {
+        setCheckingIn(false)
+        setFullScreenQuest(null)
+        setSelectedDestination(null)
+        setIsCheckedIn(false)
+        onClose()
+      }, 2000)
+    }, 1500)
+  }
+
+  const canCheckIn = distanceToDestination <= 50 && fullScreenQuest && !checkingIn && !isCheckedIn
+
+  const getDistanceToQuest = (quest: QuestDestination): number => {
+    if (!userLocation) return Infinity
+    return calculateDistance(userLocation.lat, userLocation.lng, quest.lat, quest.lng)
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background">
-      {/* Close Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 text-muted-foreground hover:text-foreground"
-      >
-        <X className="w-6 h-6" />
-      </Button>
-
-      {/* Navigation Map */}
-      <div className="relative w-full h-full overflow-hidden">
-        {/* Grid Background */}
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `
-              linear-gradient(var(--color-neon-cyan) 1px, transparent 1px),
-              linear-gradient(90deg, var(--color-neon-cyan) 1px, transparent 1px)
-            `,
-            backgroundSize: "60px 60px",
-          }}
-        ></div>
-
-        {/* Ambient Background Effects */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neon-cyan/5 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-neon-magenta/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        </div>
-
-        {/* User Avatar (Center) */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <div className="relative">
-            {/* Avatar Glow */}
-            <div className="absolute inset-0 w-16 h-16 bg-neon-cyan rounded-full animate-ping opacity-50"></div>
-
-            {/* Avatar */}
-            <div className="relative w-16 h-16 bg-card border-2 border-neon-cyan rounded-lg overflow-hidden glow-cyan">
-              <svg viewBox="0 0 64 64" className="w-full h-full">
-                {/* Pixel art user avatar */}
-                <rect x="0" y="0" width="64" height="64" fill="currentColor" className="text-background" />
-                <rect x="16" y="16" width="32" height="32" fill="currentColor" className="text-neon-cyan" />
-                <rect x="20" y="20" width="8" height="8" fill="currentColor" className="text-background" />
-                <rect x="36" y="20" width="8" height="8" fill="currentColor" className="text-background" />
-                <rect x="24" y="32" width="16" height="4" fill="currentColor" className="text-background" />
-                <rect x="12" y="12" width="4" height="4" fill="currentColor" className="text-neon-gold" />
-                <rect x="48" y="12" width="4" height="4" fill="currentColor" className="text-neon-gold" />
-                <rect x="12" y="48" width="4" height="4" fill="currentColor" className="text-neon-magenta" />
-                <rect x="48" y="48" width="4" height="4" fill="currentColor" className="text-neon-magenta" />
-              </svg>
-            </div>
-
-            {/* Direction Indicator */}
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-              <div className="font-pixel text-xs text-neon-cyan">YOU</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Destination Point */}
-        <div className="absolute top-1/4 right-1/3 transform -translate-x-1/2 -translate-y-1/2">
-          <div className="relative">
-            {/* Destination Pulse */}
-            <div
-              className={`absolute inset-0 w-12 h-12 bg-neon-magenta rounded-full ${
-                pulseAnimation ? "animate-ping" : "animate-pulse-glow"
-              } opacity-75`}
-            ></div>
-
-            {/* Destination Circle */}
-            <div className="relative w-12 h-12 bg-neon-magenta rounded-full border-2 border-background flex items-center justify-center glow-magenta">
-              <div className="w-4 h-4 bg-background rounded-full"></div>
-            </div>
-
-            {/* Destination Label */}
-            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-              <div className="font-pixel text-xs text-neon-magenta">DESTINATION</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Line */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          <defs>
-            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="var(--color-neon-cyan)" stopOpacity="1" />
-              <stop offset="100%" stopColor="var(--color-neon-magenta)" stopOpacity="1" />
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {/* Animated Navigation Line */}
-          <line
-            x1="50%"
-            y1="50%"
-            x2="66.66%"
-            y2="25%"
-            stroke="url(#lineGradient)"
-            strokeWidth="3"
-            strokeDasharray="10,5"
-            filter="url(#glow)"
-            className="animate-pulse"
-          >
-            <animate attributeName="stroke-dashoffset" values="0;-15" dur="2s" repeatCount="indefinite" />
-          </line>
-        </svg>
-
-        {/* Distance and Direction Info */}
-        <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
-          <div className="bg-card/80 backdrop-blur-sm border border-border rounded-lg px-6 py-3">
-            <div className="text-center">
-              <div className="font-pixel text-lg text-neon-cyan mb-1">Crystal Caves</div>
-              <div className="text-sm text-muted-foreground">Distance: 2.3 km • Direction: NE</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Status Messages */}
-        <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2">
-          <div className="text-center">
-            {!isCheckedIn ? (
-              <div className="font-pixel text-sm text-neon-gold animate-pulse">
-                {pulseAnimation ? "Navigating to destination..." : "Destination reached!"}
+    <div className="fixed inset-0 z-50 bg-black">
+      {/* ✅ Clean Header */}
+      <div className="absolute top-0 left-0 right-0 z-10 bg-black border-b border-cyan-400">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center space-x-4">
+            <h1 className="font-pixel text-xl text-cyan-400">
+              {fullScreenQuest ? `Navigate to ${fullScreenQuest.name}` : "Staked Quests Navigation"}
+            </h1>
+            {userLocation && (
+              <div className="flex items-center space-x-2 text-xs bg-zinc-900 border border-cyan-400 rounded px-3 py-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-cyan-400">GPS ACTIVE</span>
+                {userLocation.accuracy && (
+                  <span className="text-gray-400">±{Math.round(userLocation.accuracy)}m</span>
+                )}
               </div>
-            ) : (
-              <div className="font-pixel text-sm text-green-400">Check-in successful! Quest completed!</div>
             )}
           </div>
-        </div>
-
-        {/* Check-in Button */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+          
           <Button
-            onClick={handleCheckIn}
-            disabled={pulseAnimation || isCheckedIn}
-            className={`font-pixel text-xl px-12 py-6 transition-all duration-300 ${
-              pulseAnimation
-                ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : isCheckedIn
-                  ? "bg-green-500 text-background"
-                  : "bg-neon-magenta text-background hover:bg-neon-magenta/90 glow-magenta hover:scale-105"
-            }`}
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (fullScreenQuest) {
+                setFullScreenQuest(null)
+                setSelectedDestination(null)
+              } else {
+                onClose()
+              }
+            }}
+            className="text-cyan-400 hover:text-white hover:bg-zinc-900 border border-cyan-400"
           >
-            {isCheckedIn ? "CHECKED IN ✓" : pulseAnimation ? "APPROACHING..." : "CHECK-IN"}
+            <X className="w-6 h-6" />
           </Button>
         </div>
 
-        {/* Compass Rose */}
-        <div className="absolute top-8 right-8">
-          <div className="w-16 h-16 opacity-50">
-            <svg viewBox="0 0 64 64" className="w-full h-full text-neon-cyan animate-rotate-slow">
-              <circle cx="32" cy="32" r="30" fill="none" stroke="currentColor" strokeWidth="2" />
-              <polygon points="32,8 36,20 32,18 28,20" fill="currentColor" />
-              <polygon points="32,56 36,44 32,46 28,44" fill="currentColor" />
-              <polygon points="56,32 44,28 46,32 44,36" fill="currentColor" />
-              <polygon points="8,32 20,28 18,32 20,36" fill="currentColor" />
-              <circle cx="32" cy="32" r="3" fill="currentColor" />
-              <text x="32" y="14" textAnchor="middle" className="text-xs font-pixel" fill="currentColor">
-                N
-              </text>
-            </svg>
+        {/* Error Banner */}
+        {locationError && (
+          <div className="px-4 pb-2">
+            <div className="bg-red-900 border border-red-500 rounded p-3 flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-red-400" />
+              <span className="text-red-400 text-sm">{locationError}</span>
+            </div>
           </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="pt-16 h-full flex">
+        {/* Sidebar */}
+        {!fullScreenQuest && (
+          <div className="w-80 bg-black border-r border-zinc-800 overflow-y-auto">
+            <div className="p-4">
+              <h2 className="font-pixel text-lg text-cyan-400 mb-2">STAKED QUESTS</h2>
+              <p className="text-xs text-gray-400 mb-4">Only destinations you have staked appear here</p>
+              
+              {questDestinations.length === 0 ? (
+                <div className="text-center py-8">
+                  <MapPin className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
+                  <p className="text-gray-400 text-sm">No staked quests available</p>
+                  <p className="text-zinc-600 text-xs mt-1">Stake a quest from the Explore page</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {questDestinations.map((quest) => {
+                    const distance = getDistanceToQuest(quest)
+                    return (
+                      <Card 
+                        key={quest.id} 
+                        className="cursor-pointer hover:border-cyan-400 transition-colors bg-zinc-900 border-zinc-700"
+                        onClick={() => handleQuestSelect(quest)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-pixel text-sm text-white truncate">{quest.name}</h3>
+                            <div className="flex space-x-1">
+                              <Badge className="bg-blue-600 text-white text-xs">STAKED</Badge>
+                              <Badge className={quest.status === "ready-for-checkin" ? "bg-green-600 text-white" : "bg-amber-600 text-white"}>
+                                {quest.status === "ready-for-checkin" ? "READY" : "IN PROGRESS"}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+                            <span className="text-orange-400 font-bold">{quest.stakeAmount} WNDR</span>
+                            <span>{quest.timeRemaining}% remaining</span>
+                          </div>
+
+                          {userLocation && (
+                            <div className="flex items-center justify-between text-xs mb-3">
+                              <span className="flex items-center text-cyan-400">
+                                <Target className="w-3 h-3 mr-1" />
+                                {distance < 1000 ? `${Math.round(distance)}m` : `${(distance/1000).toFixed(1)}km`} away
+                              </span>
+                              <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                distance <= 100 ? 'bg-green-600 text-white' :
+                                distance <= 500 ? 'bg-amber-600 text-white' :
+                                'bg-red-600 text-white'
+                              }`}>
+                                {distance <= 100 ? 'VERY CLOSE' : distance <= 500 ? 'NEARBY' : 'FAR'}
+                              </span>
+                            </div>
+                          )}
+
+                          <Button 
+                            size="sm" 
+                            className="w-full bg-cyan-400 hover:bg-cyan-500 text-black font-bold"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleQuestSelect(quest)
+                            }}
+                          >
+                            <Navigation className="w-4 h-4 mr-1" />
+                            NAVIGATE TO QUEST
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Map Container */}
+        <div className="flex-1 relative">
+          {userLocation ? (
+            <MapContainer 
+              center={[userLocation.lat, userLocation.lng]} 
+              zoom={13} 
+              style={{ height: "100%", width: "100%" }}
+              zoomControl={!fullScreenQuest}
+              className="z-0"
+              maxZoom={18}
+              minZoom={8}
+            >
+              <TileLayer 
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; OpenStreetMap contributors'
+                maxZoom={18}
+              />
+
+              <LocationTracker 
+                onLocationUpdate={handleLocationUpdate}
+                onError={handleLocationError}
+              />
+
+              <NavigationController 
+                userLocation={userLocation}
+                activeDestination={fullScreenQuest}
+                onDistanceUpdate={handleDistanceUpdate}
+              />
+
+              <Marker 
+                position={[userLocation.lat, userLocation.lng]} 
+                icon={createUserIcon(userLocation.heading)}
+              >
+                <Popup>
+                  <div className="text-center bg-black text-cyan-400 p-2 rounded">
+                    <p className="font-pixel text-sm mb-1">YOUR LOCATION</p>
+                    <p className="text-xs text-gray-300">Accuracy: ±{Math.round(userLocation.accuracy)}m</p>
+                    {userLocation.speed && (
+                      <p className="text-xs text-gray-300">Speed: {Math.round(userLocation.speed * 3.6)} km/h</p>
+                    )}
+                    <p className="text-xs text-gray-500">Updated: {new Date(userLocation.timestamp).toLocaleTimeString()}</p>
+                  </div>
+                </Popup>
+              </Marker>
+
+              <Circle
+                center={[userLocation.lat, userLocation.lng]}
+                radius={Math.min(userLocation.accuracy, 100)}
+                pathOptions={{
+                  color: "#22d3ee",
+                  fillColor: "#22d3ee",
+                  fillOpacity: 0.1,
+                  weight: 2,
+                  dashArray: "3, 3"
+                }}
+              />
+
+              {questDestinations.map((quest) => {
+                const distance = getDistanceToQuest(quest)
+                return (
+                  <Marker
+                    key={quest.id}
+                    position={[quest.lat, quest.lng]}
+                    icon={createDestinationIcon(quest.id === fullScreenQuest?.id, distance)}
+                    eventHandlers={{
+                      click: () => {
+                        if (!fullScreenQuest) {
+                          handleQuestSelect(quest)
+                        }
+                      }
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-center bg-black text-white p-3 rounded">
+                        <h3 className="font-pixel text-sm mb-2 text-cyan-400">{quest.name}</h3>
+                        <Badge className="bg-blue-600 text-white mb-2">STAKED QUEST</Badge>
+                        <p className="text-xs text-orange-400 mb-1">Staked: {quest.stakeAmount} WNDR</p>
+                        <p className="text-xs text-gray-300 mb-2">
+                          Distance: {distance < 1000 ? `${Math.round(distance)}m` : `${(distance/1000).toFixed(1)}km`}
+                        </p>
+                        {!fullScreenQuest && (
+                          <Button 
+                            size="sm"
+                            className="bg-cyan-400 hover:bg-cyan-500 text-black font-bold"
+                            onClick={() => handleQuestSelect(quest)}
+                          >
+                            Navigate Here
+                          </Button>
+                        )}
+                      </div>
+                    </Popup>
+                  </Marker>
+                )
+              })}
+
+              {fullScreenQuest && (
+                <>
+                  <Circle
+                    center={[fullScreenQuest.lat, fullScreenQuest.lng]}
+                    radius={50}
+                    pathOptions={{
+                      color: canCheckIn ? "#10b981" : "#ef4444",
+                      fillColor: canCheckIn ? "#10b981" : "#ef4444",
+                      fillOpacity: canCheckIn ? 0.2 : 0.1,
+                      weight: 3,
+                      dashArray: "8, 4"
+                    }}
+                  />
+                  <Circle
+                    center={[fullScreenQuest.lat, fullScreenQuest.lng]}
+                    radius={100}
+                    pathOptions={{
+                      color: "#f59e0b",
+                      fillColor: "transparent",
+                      weight: 2,
+                      dashArray: "12, 8",
+                      opacity: 0.6
+                    }}
+                  />
+                </>
+              )}
+            </MapContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 animate-spin text-cyan-400 mx-auto mb-4" />
+                <p className="text-cyan-400 text-lg">Loading your location...</p>
+                <p className="text-gray-400 text-sm mt-2">Please allow location access when prompted</p>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Info Panel */}
+          {fullScreenQuest && userLocation && (
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+              <Card className="bg-black border border-cyan-400 min-w-[300px]">
+                <CardContent className="p-6 text-center">
+                  <div className="mb-4">
+                    <Badge className="bg-blue-600 text-white mb-2">STAKED QUEST</Badge>
+                    <h3 className="font-pixel text-lg text-cyan-400 mb-2">{fullScreenQuest.name}</h3>
+                    <div className="flex items-center justify-center space-x-6 text-sm">
+                      <div className="flex items-center space-x-1 text-cyan-400">
+                        <Target className="w-4 h-4" />
+                        <span className="font-medium">
+                          {distanceToDestination < 1000 
+                            ? `${Math.round(distanceToDestination)}m away` 
+                            : `${(distanceToDestination/1000).toFixed(2)}km away`
+                          }
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-orange-400">
+                        <MapPin className="w-4 h-4" />
+                        <span>{fullScreenQuest.stakeAmount} WNDR</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    {isCheckedIn ? (
+                      <div className="text-green-400 font-pixel">
+                        <div className="text-2xl mb-1">🎉</div>
+                        STAKED QUEST COMPLETED!
+                      </div>
+                    ) : checkingIn ? (
+                      <div className="text-amber-400 font-pixel flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        CHECKING IN...
+                      </div>
+                    ) : distanceToDestination <= 50 ? (
+                      <div className="text-green-400 font-pixel">
+                        <div className="text-lg mb-1">✓</div>
+                        WITHIN CHECK-IN RANGE!
+                      </div>
+                    ) : distanceToDestination <= 100 ? (
+                      <p className="text-amber-400 font-pixel">ALMOST THERE! GET CLOSER</p>
+                    ) : (
+                      <p className="text-gray-400">Navigate to within 50m to check in</p>
+                    )}
+                  </div>
+
+                  <Button
+                    onClick={handleCheckIn}
+                    disabled={!canCheckIn}
+                    size="lg"
+                    className={`font-pixel px-8 py-4 text-lg font-bold ${
+                      isCheckedIn
+                        ? "bg-green-600 text-white"
+                        : canCheckIn
+                        ? "bg-cyan-400 hover:bg-cyan-500 text-black"
+                        : "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                    }`}
+                  >
+                    {checkingIn ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        CHECKING IN...
+                      </>
+                    ) : isCheckedIn ? (
+                      "CHECKED IN ✓"
+                    ) : canCheckIn ? (
+                      "CHECK IN NOW"
+                    ) : (
+                      `GET ${Math.round(distanceToDestination - 50)}M CLOSER`
+                    )}
+                  </Button>
+
+                  {!isCheckedIn && !checkingIn && distanceToDestination > 50 && distanceToDestination < 200 && (
+                    <div className="mt-3">
+                      <div className="w-full bg-zinc-700 rounded-full h-2">
+                        <div 
+                          className="bg-cyan-400 h-2 rounded-full transition-all duration-500"
+                          style={{ 
+                            width: `${Math.max(0, Math.min(100, (200 - distanceToDestination) / 150 * 100))}%`
+                          }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Approaching staked destination...</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </div>

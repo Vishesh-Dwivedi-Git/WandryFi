@@ -1,10 +1,51 @@
+// app/explore/page.tsx
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { useWanderfy } from "@/contexts/wanderify-context"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { useWanderfy } from "../contexts/wanderify-context"
 import StakingModal from "@/components/staking-modal"
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
+import L from "leaflet"
+import "leaflet/dist/leaflet.css"
+import Image from "next/image"
+import { MapPin, Trophy, Users, Clock } from "lucide-react"
+
+// ✅ Clean Solid Marker Icons
+const createCustomIcon = (difficulty: string, isStaked: boolean = false, isActive: boolean = false) => {
+  const colors = {
+    Easy: "#00D4FF",     // Bright cyan
+    Medium: "#FF9500",   // Orange
+    Hard: "#FF4D94",     // Pink
+  }
+
+  const color = colors[difficulty as keyof typeof colors] || "#00D4FF"
+  const size = isActive ? 40 : isStaked ? 36 : 32
+
+  return L.divIcon({
+    html: `
+      <div class="relative">
+        <div class="relative rounded-full border-2 border-white flex items-center justify-center" 
+             style="background-color: ${isStaked ? "#666666" : color}; width: ${size}px; height: ${size}px;">
+          <svg viewBox="0 0 24 24" class="text-white" fill="currentColor" style="width: ${size * 0.4}px; height: ${size * 0.4}px;">
+            ${
+              isActive
+                ? '<path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>'
+                : isStaked
+                ? '<path d="M9 12L11 14L15 10M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z"/>'
+                : '<path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>'
+            }
+          </svg>
+        </div>
+      </div>
+    `,
+    className: "custom-marker",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+  })
+}
 
 interface Destination {
   id: string
@@ -14,226 +55,411 @@ interface Destination {
   difficulty: "Easy" | "Medium" | "Hard"
   description: string
   coordinates: { x: number; y: number }
+  participants?: number
+  estimatedTime?: string
+  tags?: string[]
 }
 
 const destinations: Destination[] = [
   {
     id: "1",
     name: "Nrupatunga Betta",
-    image: "/mountain-peak-sunset.png",
+    image: "/api/placeholder/400/250",
     rewardPool: 500,
     difficulty: "Hard",
     description: "A challenging mountain peak with breathtaking views and ancient ruins.",
-    coordinates: { x: 25, y: 35 },
+    coordinates: { x: 13.3428, y: 77.1234 },
+    participants: 12,
+    estimatedTime: "2 days",
+    tags: ["Mountain", "Trekking", "Ancient"]
   },
   {
     id: "2",
     name: "Mystic Falls",
-    image: "/waterfall-forest-mist.png",
+    image: "/api/placeholder/400/250",
     rewardPool: 350,
     difficulty: "Medium",
-    description: "Hidden waterfall deep in the enchanted forest.",
-    coordinates: { x: 60, y: 20 },
+    description: "Hidden waterfall deep in the enchanted forest with crystal clear pools.",
+    coordinates: { x: 13.2846, y: 77.0436 },
+    participants: 8,
+    estimatedTime: "1 day",
+    tags: ["Waterfall", "Swimming", "Forest"]
   },
   {
     id: "3",
-    name: "Crystal Caves",
-    image: "/crystal-cave-glowing.png",
+    name: "Hampi Ruins",
+    image: "/api/placeholder/400/250",
     rewardPool: 750,
-    difficulty: "Hard",
-    description: "Underground crystal formations that glow with mysterious energy.",
-    coordinates: { x: 80, y: 70 },
+    difficulty: "Medium",
+    description: "Explore the magnificent ruins of the Vijayanagara Empire, a UNESCO World Heritage Site.",
+    coordinates: { x: 15.3350, y: 76.4600 },
+    participants: 25,
+    estimatedTime: "3 days",
+    tags: ["History", "UNESCO", "Culture"]
   },
   {
     id: "4",
-    name: "Desert Oasis",
-    image: "/desert-oasis-palm-trees.png",
-    rewardPool: 200,
+    name: "Coorg Coffee Plantations",
+    image: "/api/placeholder/400/250",
+    rewardPool: 400,
     difficulty: "Easy",
-    description: "A peaceful oasis in the vast desert with ancient palm trees.",
-    coordinates: { x: 15, y: 80 },
+    description: "Scenic coffee plantation tours with aromatic trails and local culture immersion.",
+    coordinates: { x: 12.3375, y: 75.8069 },
+    participants: 18,
+    estimatedTime: "2 days",
+    tags: ["Coffee", "Culture", "Scenic"]
   },
   {
     id: "5",
-    name: "Sky Temple",
-    image: "/temple-clouds-floating.png",
-    rewardPool: 1000,
-    difficulty: "Hard",
-    description: "A floating temple among the clouds, accessible only to the brave.",
-    coordinates: { x: 45, y: 15 },
+    name: "Gokarna Beach Trek",
+    image: "/api/placeholder/400/250",
+    rewardPool: 600,
+    difficulty: "Medium",
+    description: "Trek along pristine beaches with hidden coves and sacred temples.",
+    coordinates: { x: 14.5492, y: 74.3200 },
+    participants: 15,
+    estimatedTime: "2 days",
+    tags: ["Beach", "Temples", "Coastal"]
   },
   {
     id: "6",
-    name: "Coral Gardens",
-    image: "/coral-reef-underwater-colorful.png",
-    rewardPool: 400,
-    difficulty: "Medium",
-    description: "Vibrant underwater coral gardens teeming with marine life.",
-    coordinates: { x: 70, y: 50 },
+    name: "Mullayanagiri Peak",
+    image: "/api/placeholder/400/250",
+    rewardPool: 800,
+    difficulty: "Hard",
+    description: "Karnataka's highest peak offering panoramic views of the Western Ghats.",
+    coordinates: { x: 13.3931, y: 75.7208 },
+    participants: 10,
+    estimatedTime: "2 days",
+    tags: ["Peak", "Highest", "Ghats"]
   },
+  {
+    id: "7",
+    name: "Jog Falls",
+    image: "/api/placeholder/400/250",
+    rewardPool: 450,
+    difficulty: "Easy",
+    description: "India's second-highest waterfall cascading down in four distinct streams.",
+    coordinates: { x: 14.2290, y: 74.8131 },
+    participants: 22,
+    estimatedTime: "1 day",
+    tags: ["Waterfall", "Photography", "Monsoon"]
+  },
+  {
+    id: "8",
+    name: "Badami Caves",
+    image: "/api/placeholder/400/250",
+    rewardPool: 550,
+    difficulty: "Medium",
+    description: "Ancient rock-cut cave temples showcasing Chalukyan architecture and art.",
+    coordinates: { x: 15.9149, y: 75.6767 },
+    participants: 14,
+    estimatedTime: "1 day",
+    tags: ["Caves", "Ancient", "Architecture"]
+  },
+  {
+    id: "9",
+    name: "Dandeli Wildlife Sanctuary",
+    image: "/api/placeholder/400/250",
+    rewardPool: 700,
+    difficulty: "Medium",
+    description: "Wildlife safari and river rafting adventure in pristine forest ecosystem.",
+    coordinates: { x: 15.2593, y: 74.6253 },
+    participants: 16,
+    estimatedTime: "3 days",
+    tags: ["Wildlife", "Safari", "Rafting"]
+  },
+  {
+    id: "10",
+    name: "Shivanasamudra Falls",
+    image: "/api/placeholder/400/250",
+    rewardPool: 300,
+    difficulty: "Easy",
+    description: "Twin waterfalls formed by River Kaveri, perfect for photography enthusiasts.",
+    coordinates: { x: 12.2897, y: 77.1711 },
+    participants: 20,
+    estimatedTime: "1 day",
+    tags: ["Twin Falls", "Photography", "River"]
+  }
 ]
+
+// ✅ Clean Map Styling
+function MapStyle() {
+  const map = useMap()
+
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.textContent = `
+      .leaflet-container {
+        background: #000000 !important;
+      }
+      .leaflet-tile {
+        filter: none !important; /* Keep dark map theme */
+      }
+      .leaflet-control {
+        background: #000000 !important;
+        border: 1px solid #333333 !important;
+        border-radius: 4px !important;
+      }
+      .leaflet-popup-content-wrapper {
+        background: #000000 !important;
+        border: 1px solid #333333 !important;
+        border-radius: 6px !important;
+        color: #FFFFFF !important;
+      }
+      .leaflet-popup-tip {
+        background: #000000 !important;
+        border: 1px solid #333333 !important;
+      }
+    `
+    document.head.appendChild(style)
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
+
+  return null
+}
 
 export default function ExplorePage() {
   const [viewMode, setViewMode] = useState<"map" | "list">("list")
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null)
-  const { isQuestActive } = useWanderfy()
+  const [filterDifficulty, setFilterDifficulty] = useState<string>("all")
+  const { isQuestActive, isQuestStaked } = useWanderfy()
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
-        return "text-green-400"
+        return "text-[#00D4FF] border-[#00D4FF]"
       case "Medium":
-        return "text-neon-gold"
+        return "text-[#FF9500] border-[#FF9500]"
       case "Hard":
-        return "text-neon-magenta"
+        return "text-[#FF4D94] border-[#FF4D94]"
       default:
-        return "text-foreground"
+        return "text-[#666666] border-[#666666]"
     }
   }
 
-  return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header with Toggle */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="font-pixel text-3xl text-neon-cyan">Explore</h1>
+  const getStatusBadge = (destination: Destination) => {
+    if (isQuestActive(destination.id)) {
+      return <Badge className="bg-[#00D4FF] text-black font-pixel">Active Quest</Badge>
+    }
+    if (isQuestStaked(destination.id)) {
+      return <Badge className="bg-[#666666] text-white font-pixel">Staked</Badge>
+    }
+    return <Badge className="bg-[#000000] text-[#00D4FF] border border-[#333333] font-pixel">Available</Badge>
+  }
 
-          {/* View Toggle */}
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-muted-foreground">View:</span>
-            <div className="flex bg-muted rounded-lg p-1">
-              <Button
-                variant={viewMode === "map" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("map")}
-                className={viewMode === "map" ? "bg-neon-cyan text-background" : ""}
-              >
-                Map View
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className={viewMode === "list" ? "bg-neon-cyan text-background" : ""}
-              >
-                List View
-              </Button>
+  const filteredDestinations = filterDifficulty === "all"
+    ? destinations
+    : destinations.filter(dest => dest.difficulty === filterDifficulty)
+
+  const mapCenter: [number, number] = [13.5, 76.0]
+
+  return (
+    <div className="min-h-screen bg-[#000000] p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 space-y-4 md:space-y-0">
+          <div>
+            <h1 className="font-pixel text-4xl text-[#00D4FF]">
+              Explore Destinations
+            </h1>
+            <p className="text-[#FFFFFF] mt-2">Discover amazing places and start your adventure</p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            {/* Filter Buttons */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-[#FFFFFF]">Difficulty:</span>
+              <div className="flex bg-[#000000] rounded-lg p-1 border border-[#333333]">
+                {["all", "Easy", "Medium", "Hard"].map((level) => (
+                  <Button
+                    key={level}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setFilterDifficulty(level)}
+                    className={`capitalize font-pixel ${
+                      filterDifficulty === level
+                        ? "bg-[#00D4FF] text-black hover:bg-[#00B7E6]"
+                        : "text-[#FFFFFF] hover:text-[#00D4FF] hover:bg-[#000000]"
+                    }`}
+                  >
+                    {level}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-[#FFFFFF]">View:</span>
+              <div className="flex bg-[#000000] rounded-lg p-1 border border-[#333333]">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewMode("map")}
+                  className={viewMode === "map" ? "bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel" : "text-[#FFFFFF] hover:text-[#00D4FF] hover:bg-[#000000] font-pixel"}
+                >
+                  <MapPin className="w-4 h-4 mr-1" />
+                  Map
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className={viewMode === "list" ? "bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel" : "text-[#FFFFFF] hover:text-[#00D4FF] hover:bg-[#000000] font-pixel"}
+                >
+                  Grid
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Map View */}
         {viewMode === "map" && (
-          <div className="relative bg-card border border-border rounded-lg overflow-hidden h-[600px]">
-            {/* Map Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/20 to-background">
-              {/* Grid pattern for retro feel */}
-              <div
-                className="absolute inset-0 opacity-20"
-                style={{
-                  backgroundImage: `
-                    linear-gradient(var(--color-neon-cyan) 1px, transparent 1px),
-                    linear-gradient(90deg, var(--color-neon-cyan) 1px, transparent 1px)
-                  `,
-                  backgroundSize: "40px 40px",
-                }}
-              ></div>
-            </div>
-
-            {/* Destination Markers */}
-            {destinations.map((destination) => (
-              <button
-                key={destination.id}
-                onClick={() => setSelectedDestination(destination)}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 group"
-                style={{
-                  left: `${destination.coordinates.x}%`,
-                  top: `${destination.coordinates.y}%`,
-                }}
-              >
-                <div className="relative">
-                  {/* Pulsing glow effect */}
-                  <div className="absolute inset-0 w-8 h-8 bg-neon-cyan rounded-full animate-ping opacity-75"></div>
-
-                  {/* Main marker */}
-                  <div className="relative w-8 h-8 bg-neon-cyan rounded-full border-2 border-background flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <svg viewBox="0 0 16 16" className="w-4 h-4 text-background" fill="currentColor">
-                      <rect x="6" y="2" width="4" height="12" />
-                      <rect x="2" y="6" width="12" height="4" />
-                      <rect x="4" y="4" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="1" />
-                    </svg>
-                  </div>
-
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                    <div className="bg-card border border-border rounded px-2 py-1 text-xs whitespace-nowrap">
-                      {destination.name}
+          <div className="relative bg-[#000000] border border-[#333333] rounded-lg overflow-hidden h-[650px]">
+            <MapContainer
+              center={mapCenter}
+              zoom={8}
+              style={{ height: "100%", width: "100%" }}
+              className="z-10"
+            >
+              <MapStyle />
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              {filteredDestinations.map((destination) => (
+                <Marker
+                  key={destination.id}
+                  position={[destination.coordinates.x, destination.coordinates.y]}
+                  icon={createCustomIcon(
+                    destination.difficulty,
+                    isQuestStaked(destination.id),
+                    isQuestActive(destination.id)
+                  )}
+                  eventHandlers={{
+                    click: () => !isQuestStaked(destination.id) && setSelectedDestination(destination),
+                  }}
+                >
+                  <Popup>
+                    <div className="p-3 bg-[#000000] text-[#FFFFFF]">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-pixel text-lg text-[#00D4FF]">{destination.name}</h3>
+                        {getStatusBadge(destination)}
+                      </div>
+                      <p className="text-sm text-[#FFFFFF] mb-3">{destination.description}</p>
+                      <div className="flex items-center justify-between text-xs mb-3">
+                        <div className="flex items-center space-x-2">
+                          <Trophy className="w-3 h-3 text-[#FF9500]" />
+                          <span className="text-[#FF9500] font-bold">{destination.rewardPool} WNDR</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Users className="w-3 h-3 text-[#FFFFFF]" />
+                          <span className="text-[#FFFFFF]">{destination.participants}</span>
+                        </div>
+                      </div>
+                      {!isQuestStaked(destination.id) && (
+                        <Button
+                          size="sm"
+                          className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
+                          onClick={() => setSelectedDestination(destination)}
+                        >
+                          Start Quest
+                        </Button>
+                      )}
                     </div>
-                  </div>
-                </div>
-              </button>
-            ))}
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
           </div>
         )}
 
-        {/* List View */}
+        {/* Grid View */}
         {viewMode === "list" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {destinations.map((destination) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredDestinations.map((destination) => (
               <Card
                 key={destination.id}
-                className={`group cursor-pointer bg-card border transition-all duration-300 hover:scale-105 ${
-                  isQuestActive(destination.id)
-                    ? "border-neon-gold/50 opacity-75"
-                    : "border-border hover:border-neon-cyan/50 hover:glow-cyan/20"
-                }`}
-                onClick={() => !isQuestActive(destination.id) && setSelectedDestination(destination)}
+                className="cursor-pointer transition-all duration-300 hover:scale-105 border-[#333333] bg-[#000000]"
+                onClick={() => !isQuestStaked(destination.id) && setSelectedDestination(destination)}
               >
-                <CardContent className="p-0">
-                  {/* Image */}
-                  <div className="relative overflow-hidden rounded-t-lg">
-                    <img
-                      src={destination.image || "/placeholder.svg"}
+                <CardHeader className="p-0">
+                  <div className="relative h-48 overflow-hidden rounded-t-lg">
+                    <Image
+                      src={destination.image}
                       alt={destination.name}
-                      className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                      fill
+                      className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <h3 className="font-pixel text-lg text-foreground mb-3">{destination.name}</h3>
-
-                    {/* Quest Active Indicator */}
-                    {isQuestActive(destination.id) && (
-                      <div className="mb-3 px-3 py-1 bg-neon-gold/20 border border-neon-gold rounded-full text-center">
-                        <span className="font-pixel text-xs text-neon-gold">QUEST ACTIVE</span>
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Reward Pool:</span>
-                        <span className="font-pixel text-neon-gold">{destination.rewardPool} WNDR</span>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Difficulty:</span>
-                        <span className={`font-pixel text-sm ${getDifficultyColor(destination.difficulty)}`}>
-                          {destination.difficulty}
-                        </span>
-                      </div>
+                    <div className="absolute top-3 right-3">
+                      {getStatusBadge(destination)}
                     </div>
-
-                    <p className="text-sm text-muted-foreground mt-4 line-clamp-2">{destination.description}</p>
+                    <div className="absolute top-3 left-3">
+                      <Badge className={`${getDifficultyColor(destination.difficulty)} bg-[#000000] border font-pixel`}>
+                        {destination.difficulty}
+                      </Badge>
+                    </div>
                   </div>
+                </CardHeader>
+                
+                <CardContent className="p-4">
+                  <CardTitle className="font-pixel text-lg mb-2 text-[#FFFFFF]">
+                    {destination.name}
+                  </CardTitle>
+                  
+                  <p className="text-sm text-[#FFFFFF] mb-4 line-clamp-2">
+                    {destination.description}
+                  </p>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {destination.tags?.slice(0, 3).map((tag, index) => (
+                      <Badge key={index} className="bg-[#000000] text-[#FFFFFF] border border-[#333333] text-xs px-2 py-0 font-pixel">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="flex items-center justify-between text-sm mb-4">
+                    <div className="flex items-center space-x-1">
+                      <Trophy className="w-4 h-4 text-[#FF9500]" />
+                      <span className="text-[#FF9500] font-bold font-pixel">{destination.rewardPool} WNDR</span>
+                    </div>
+                    <div className="flex items-center space-x-1 text-[#FFFFFF]">
+                      <Users className="w-4 h-4" />
+                      <span className="font-pixel">{destination.participants}</span>
+                    </div>
+                    <div className="flex items-center space-x-1 text-[#FFFFFF]">
+                      <Clock className="w-4 h-4" />
+                      <span className="font-pixel">{destination.estimatedTime}</span>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  {!isQuestStaked(destination.id) ? (
+                    <Button
+                      className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedDestination(destination)
+                      }}
+                    >
+                      {isQuestActive(destination.id) ? "View Quest" : "Start Quest"}
+                    </Button>
+                  ) : (
+                    <Button disabled className="w-full bg-[#666666] text-[#FFFFFF] cursor-not-allowed font-pixel">
+                      Quest Staked
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
 
-        {/* Staking Modal */}
+        {/* Modal */}
         {selectedDestination && (
           <StakingModal
             destination={selectedDestination}
