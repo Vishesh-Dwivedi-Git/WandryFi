@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import { useAccount, useReadContract } from "wagmi";
 import { useWanderifyContract } from "@/lib/contract";
 import { formatEther } from "viem";
+import { destinationsById } from "@/lib/destinations";
 
 // Dynamically import leaflet and react-leaflet to avoid SSR issues
 const L = typeof window !== "undefined" ? require("leaflet") : null;
@@ -162,7 +163,7 @@ export default function ExplorePage() {
   console.log(commitmentData);
 
   // Fetch destination data from contract for known destination IDs
-  const destinationIds = [1, 2, 3, 4, 5, 6]; // Include all destinations from contract
+  const destinationIds = [1, 2, 3, 4, 5, 6, 7]; // Include all destinations from contract including LNMIIT Jaipur
 
   const destinationQueries = destinationIds.map((id) => ({
     id, // Add id for easier debugging
@@ -253,68 +254,8 @@ export default function ExplorePage() {
               `Creating destination for ${destId} with name: ${name}, pool: ${poolAmount.toString()}, placeValue: ${placeValueAmount.toString()}`
             );
 
-            // Static data for demo - in production this could come from IPFS/metadata
-            const staticDestinationData = {
-              1: {
-                image: "/coral-reef-underwater-colorful.png",
-                difficulty: "Medium" as const,
-                description:
-                  "The bustling financial capital of India, home to Bollywood, diverse cultures, and iconic landmarks like the Gateway of India.",
-                coordinates: { lat: 19.076, lng: 72.8777 },
-                estimatedTime: "4 days",
-                tags: ["City", "Culture", "Bollywood"],
-              },
-              2: {
-                image: "/temple-clouds-floating.png",
-                difficulty: "Hard" as const,
-                description:
-                  "The iconic ivory-white marble mausoleum, a UNESCO World Heritage Site and symbol of eternal love.",
-                coordinates: { lat: 27.1751, lng: 78.0421 },
-                estimatedTime: "5 days",
-                tags: ["Monument", "Heritage", "Historic"],
-              },
-              3: {
-                image: "/waterfall-forest-mist.png",
-                difficulty: "Easy" as const,
-                description:
-                  "The sacred river flowing through the spiritual heart of India, offering purification and enlightenment.",
-                coordinates: { lat: 25.3176, lng: 82.9739 },
-                estimatedTime: "2 days",
-                tags: ["River", "Spiritual", "Sacred"],
-              },
-              4: {
-                image: "/mountain-peak-sunset.png",
-                difficulty: "Medium" as const,
-                description:
-                  "Paradise on Earth with breathtaking landscapes, pristine lakes, and snow-capped mountains.",
-                coordinates: { lat: 34.0479, lng: 74.4049 },
-                estimatedTime: "3 days",
-                tags: ["Mountains", "Lakes", "Paradise"],
-              },
-              5: {
-                image: "/crystal-cave-glowing.png",
-                difficulty: "Medium" as const,
-                description:
-                  "The Detroit of India, a major industrial and cultural hub known for its temples, beaches, and automotive industry.",
-                coordinates: { lat: 13.0827, lng: 80.2707 },
-                estimatedTime: "3 days",
-                tags: ["City", "Industry", "Temples"],
-              },
-              6: {
-                image: "/desert-oasis-palm-trees.png",
-                difficulty: "Easy" as const,
-                description:
-                  "The cultural capital of India, famous for its colonial architecture, museums, and rich literary heritage.",
-                coordinates: { lat: 22.5726, lng: 88.3639 },
-                estimatedTime: "3 days",
-                tags: ["Culture", "History", "Literature"],
-              },
-            };
-
-            const staticData =
-              staticDestinationData[
-                destId as keyof typeof staticDestinationData
-              ];
+            // Get static data from centralized source
+            const staticData = destinationsById[destId.toString()];
 
             if (staticData) {
               const destination = {
@@ -417,7 +358,7 @@ export default function ExplorePage() {
       ? destinations
       : destinations.filter((dest) => dest.difficulty === filterDifficulty);
 
-  const mapCenter: [number, number] = [20, 0]; // Centered more globally
+  const mapCenter: [number, number] = [23, 78]; // Centered to include Jaipur and other Indian destinations
 
   const selectedDestination = destinations.find(
     (d) => d.id === selectedDestinationId
@@ -509,7 +450,7 @@ export default function ExplorePage() {
           <div className="relative bg-[#000000] border border-[#333333] rounded-lg overflow-hidden h-[650px]">
             <MapContainer
               center={mapCenter}
-              zoom={2}
+              zoom={5}
               style={{ height: "100%", width: "100%" }}
               className="z-10"
             >

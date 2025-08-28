@@ -5,7 +5,7 @@ import { getContractAddress, getChainConfig } from "./chain-config";
 
 // Legacy export for backward compatibility
 export const contractAddr =
-  "0x610178da211fef7d417bc0e6fed39f05609ad788" as const;
+  "0x5fbdb2315678afecb367f032d93f642f64180aa3" as const;
 
 // Dynamic contract configuration based on current chain
 export function getWanderifyContract(chainId?: number) {

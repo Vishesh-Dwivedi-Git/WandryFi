@@ -588,20 +588,45 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
 
                           {/* Action Button */}
                           <Button
-                            onClick={() =>
+                            onClick={() => {
+                              // Get correct coordinates from destinations data
+                              const destinationData =
+                                destinationsById[quest.id];
+                              const correctCoordinates =
+                                destinationData?.coordinates || {
+                                  lat: 0,
+                                  lng: 0, // Fallback to {0,0} for unknown destinations
+                                };
+
+                              console.log("=== MY TRAVEL PAGE DEBUG ===");
+                              console.log("Quest ID:", quest.id);
+                              console.log("Destination Data:", destinationData);
+                              console.log(
+                                "Correct Coordinates:",
+                                correctCoordinates
+                              );
+                              console.log("=============================");
+
                               onNavigationView(true, {
-                                id: activeQuest.id,
-                                name: activeQuest.destinationName,
-                                image: activeQuest.image,
+                                id: quest.id,
+                                name: quest.destinationName,
+                                image: quest.image,
                                 rewardPool: 0, // We'll get this from contract
-                                difficulty: "Medium" as const,
-                                description: `Active quest to ${activeQuest.destinationName}`,
-                                coordinates: { lat: 0, lng: 0 }, // Default coordinates
+                                difficulty:
+                                  destinationData?.difficulty || "Medium",
+                                description:
+                                  destinationData?.description ||
+                                  `Active quest to ${quest.destinationName}`,
+                                coordinates: correctCoordinates, // ✅ Use correct coordinates
                                 participants: 1,
-                                estimatedTime: "15 days",
-                                tags: ["Active", "Quest"],
-                              })
-                            }
+                                estimatedTime:
+                                  destinationData?.estimatedTime || "15 days",
+                                tags: destinationData?.tags || [
+                                  "Active",
+                                  "Quest",
+                                ],
+                              });
+                            }}
                             disabled={quest.status !== "ready-for-checkin"}
                             className={cn(
                               "w-full font-pixel py-3",
