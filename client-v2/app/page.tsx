@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { WanderfyProvider } from "@/contexts/wanderify-context"
-import LandingPage from "@/components/landing-page"
-import MainApp from "@/components/main-app"
+import { useState } from "react";
+import { WanderfyProvider } from "@/contexts/wanderify-context";
+import LandingPage from "@/components/landing-page";
+import MainApp from "@/components/main-app";
 
 export default function Home() {
-  const [isConnected, setIsConnected] = useState(false)
+  const [isConnected, setIsConnected] = useState(false);
 
   const handleConnect = () => {
-    setIsConnected(true)
-  }
+    setIsConnected(true);
+  };
 
   return (
     <WanderfyProvider>
@@ -18,5 +18,5 @@ export default function Home() {
         {!isConnected ? <LandingPage onConnect={handleConnect} /> : <MainApp />}
       </div>
     </WanderfyProvider>
-  )
+  );
 }
