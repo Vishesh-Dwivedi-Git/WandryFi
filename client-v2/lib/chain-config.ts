@@ -46,7 +46,7 @@ export const CHAIN_CONFIGS: Record<number, ChainConfig> = {
   },
 };
 
-export const DEFAULT_CHAIN_ID = 31337; // Anvil for development
+export const DEFAULT_CHAIN_ID = 10143; // Anvil for development
 
 export function getChainConfig(chainId?: number): ChainConfig {
   const id = chainId || DEFAULT_CHAIN_ID;

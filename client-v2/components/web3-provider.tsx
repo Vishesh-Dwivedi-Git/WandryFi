@@ -6,7 +6,7 @@ import { injected } from 'wagmi/connectors'
 import { defineChain } from 'viem'
 
 // Configure Monad Testnet (values come from env; update .env.local)
-const MONAD_CHAIN_ID = Number(process.env.NEXT_PUBLIC_MONAD_CHAIN_ID || 20143)
+const MONAD_CHAIN_ID = Number(process.env.NEXT_PUBLIC_MONAD_CHAIN_ID || 10143)
 const MONAD_RPC_URL = process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://rpc.monad.testnet.example'
 
 export const monadTestnet = defineChain({

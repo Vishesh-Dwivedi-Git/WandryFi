@@ -93,67 +93,10 @@ const WanderfyContext = createContext<WanderfyContextType | undefined>(
 
 export function WanderfyProvider({ children }: { children: ReactNode }) {
   // Active Quests State
-  const [activeQuests, setActiveQuests] = useState<ActiveQuest[]>([
-    {
-      id: "1",
-      destinationName: "Nrupatunga Betta",
-      stakeAmount: 500,
-      timeRemaining: 75,
-      image: "/api/placeholder/400/250",
-      status: "in-progress",
-      destinationId: "1",
-      startDate: "2024-01-20",
-      rewards: {
-        wndrTokens: 500,
-        experiencePoints: 150,
-        bonusRewards: ["Mountain Explorer Badge"],
-      },
-    },
-    {
-      id: "2",
-      destinationName: "Hampi Ruins",
-      stakeAmount: 750,
-      timeRemaining: 25,
-      image: "/api/placeholder/400/250",
-      status: "ready-for-checkin",
-      destinationId: "3",
-      startDate: "2024-01-18",
-      rewards: {
-        wndrTokens: 750,
-        experiencePoints: 200,
-        bonusRewards: ["History Buff", "UNESCO Explorer"],
-      },
-    },
-    {
-      id: "3",
-      destinationName: "Coorg Coffee Plantations",
-      stakeAmount: 400,
-      timeRemaining: 90,
-      image: "/api/placeholder/400/250",
-      status: "in-progress",
-      destinationId: "4",
-      startDate: "2024-01-22",
-      rewards: {
-        wndrTokens: 400,
-        experiencePoints: 120,
-        bonusRewards: ["Coffee Connoisseur"],
-      },
-    },
-  ]);
+  const [activeQuests, setActiveQuests] = useState<ActiveQuest[]>([]);
 
   // Staked Quests State (for destinations that are staked but not yet started)
-  const [stakedQuests, setStakedQuests] = useState<StakedQuest[]>([
-    {
-      id: "staked-1",
-      destinationId: "5",
-      destinationName: "Gokarna Beach Trek",
-      stakeAmount: 600,
-      stakedDate: "2024-01-23",
-      image: "/api/placeholder/400/250",
-      difficulty: "Medium",
-      status: "staked",
-    },
-  ]);
+  const [stakedQuests, setStakedQuests] = useState<StakedQuest[]>([]);
 
   // Trophies State
   const [trophies, setTrophies] = useState<Trophy[]>([
@@ -371,16 +314,14 @@ export function WanderfyProvider({ children }: { children: ReactNode }) {
   // Helper Functions
   const getIconForDestination = (name: string): string => {
     const iconMap: Record<string, string> = {
-      "Nrupatunga Betta": "mountain",
-      "Hampi Ruins": "ruins",
-      "Coorg Coffee Plantations": "coffee",
-      "Gokarna Beach Trek": "beach",
-      "Mullayanagiri Peak": "mountain",
-      "Jog Falls": "waterfall",
-      "Badami Caves": "cave",
-      "Dandeli Wildlife Sanctuary": "wildlife",
-      "Shivanasamudra Falls": "waterfall",
-      "Mystic Falls": "waterfall",
+       "Everest Base Camp": "mountain",
+       "Chadar Trek": "winter", 
+       "Valley of Flowers": "nature",
+       "Spiti Monastery": "spiritual",
+       "Havelock Island": "marine",
+       "Jaisalmer Desert": "desert",
+       "IIIT Dharwad": "campus",
+       "LNMIIT Jaipur": "campus"
     };
     return iconMap[name] || "location";
   };

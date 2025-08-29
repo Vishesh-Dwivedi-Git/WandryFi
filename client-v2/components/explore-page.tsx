@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { JSX } from "react/jsx-runtime";
+import type { JSX } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,40 +14,31 @@ import { useWanderifyContract } from "@/lib/contract";
 import { formatEther } from "viem";
 import { destinationsById } from "@/lib/destinations";
 
-// Dynamically import leaflet and react-leaflet to avoid SSR issues
-const L = typeof window !== "undefined" ? require("leaflet") : null;
+// Dynamically import leaflet to avoid SSR issues
+let L: any = null;
 
-// Dynamically import react-leaflet components
+// Dynamic imports for react-leaflet components - with proper loading states
 const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
+  () => import("react-leaflet").then(mod => mod.MapContainer), 
+  { 
+    ssr: false,
+    loading: () => <div className="h-full flex items-center justify-center text-cyan-400">Loading map...</div>
+  }
 );
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
-  ssr: false,
-});
+const TileLayer = dynamic(() => import("react-leaflet").then(mod => mod.TileLayer), { ssr: false });
+const Marker = dynamic(() => import("react-leaflet").then(mod => mod.Marker), { ssr: false });
+const Popup = dynamic(() => import("react-leaflet").then(mod => mod.Popup), { ssr: false });
 
-// Type-safe icon creation function
-const createCustomIcon = (
-  difficulty: string,
-  isStaked: boolean = false,
-  isActive: boolean = false
-): L.DivIcon | null => {
+// Custom icon creation function
+const createCustomIcon = (difficulty: string, isStaked = false, isActive = false): L.DivIcon | null => {
   if (typeof window === "undefined" || !L) return null;
-
+  
   const colors: Record<string, string> = {
     Easy: "#00D4FF",
-    Medium: "#FF9500",
-    Hard: "#FF4D94",
+    Medium: "#FF9500", 
+    Hard: "#FF4D94"
   };
-
+  
   const color = colors[difficulty] || "#00D4FF";
   const size = isActive ? 40 : isStaked ? 36 : 32;
 
@@ -55,16 +46,11 @@ const createCustomIcon = (
     html: `
       <div class="relative">
         <div class="relative rounded-full border-2 border-white flex items-center justify-center" 
-             style="background-color: ${
-               isStaked ? "#666666" : color
-             }; width: ${size}px; height: ${size}px;">
-          <svg viewBox="0 0 24 24" class="text-white" fill="currentColor" style="width: ${
-            size * 0.4
-          }px; height: ${size * 0.4}px;">
-            ${
-              isActive
-                ? '<path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>'
-                : isStaked
+             style="background-color: ${isStaked ? "#666666" : color}; width: ${size}px; height: ${size}px;">
+          <svg viewBox="0 0 24 24" class="text-white" fill="currentColor" style="width: ${size * 0.4}px; height: ${size * 0.4}px;">
+            ${isActive 
+              ? '<path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>'
+              : isStaked
                 ? '<path d="M9 12L11 14L15 10M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z"/>'
                 : '<path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>'
             }
@@ -74,11 +60,11 @@ const createCustomIcon = (
     `,
     className: "custom-marker",
     iconSize: [size, size],
-    iconAnchor: [size / 2, size],
+    iconAnchor: [size / 2, size]
   });
 };
 
-// Type-safe MapStyle component
+// Map styling component with z-index fix
 function MapStyle(): null {
   const { useMap } = require("react-leaflet");
   const map = useMap();
@@ -86,41 +72,47 @@ function MapStyle(): null {
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
-      .leaflet-container {
-        background: #000000 !important;
+      .leaflet-container { 
+        background: #000000 !important; 
+        z-index: 1 !important;
       }
-      .leaflet-tile {
-        filter: none !important;
+      .leaflet-tile { filter: none !important; }
+      .leaflet-control { 
+        background: #000000 !important; 
+        border: 1px solid #333333 !important; 
+        border-radius: 4px !important; 
+        z-index: 10 !important;
       }
-      .leaflet-control {
-        background: #000000 !important;
-        border: 1px solid #333333 !important;
-        border-radius: 4px !important;
+      .leaflet-popup-content-wrapper { 
+        background: #000000 !important; 
+        border: 1px solid #333333 !important; 
+        border-radius: 6px !important; 
+        color: #FFFFFF !important; 
+        z-index: 1000 !important;
       }
-      .leaflet-popup-content-wrapper {
-        background: #000000 !important;
-        border: 1px solid #333333 !important;
-        border-radius: 6px !important;
-        color: #FFFFFF !important;
+      .leaflet-popup-tip { 
+        background: #000000 !important; 
+        border: 1px solid #333333 !important; 
       }
-      .leaflet-popup-tip {
-        background: #000000 !important;
-        border: 1px solid #333333 !important;
-      }
+      .leaflet-popup { z-index: 1000 !important; }
     `;
     document.head.appendChild(style);
     return () => {
-      document.head.removeChild(style);
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
     };
   }, [map]);
 
   return null;
 }
 
+import type { StaticImageData } from "next/image";
+
 interface Destination {
   id: string;
   name: string;
-  image: string;
+  image: string | StaticImageData;
   rewardPool: number;
   difficulty: "Easy" | "Medium" | "Hard";
   description: string;
@@ -132,21 +124,14 @@ interface Destination {
 
 export default function ExplorePage() {
   const [viewMode, setViewMode] = useState<"map" | "list">("list");
-  const [selectedDestinationId, setSelectedDestinationId] = useState<
-    string | null
-  >(null);
+  const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
   const [filterDifficulty, setFilterDifficulty] = useState<string>("all");
   const [mounted, setMounted] = useState(false);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
 
-  const { address, chainId } = useAccount();
-
-  console.log("=== CHAIN & WALLET STATUS ===");
-  console.log("Address:", address);
-  console.log("Chain ID:", chainId);
-  console.log("Expected Anvil Chain ID: 31337");
-
+  const { address } = useAccount();
   const contract = useWanderifyContract();
 
   // Fetch user commitment data
@@ -160,16 +145,13 @@ export default function ExplorePage() {
     },
   });
 
-  console.log(commitmentData);
-
-  // Fetch destination data from contract for known destination IDs
-  const destinationIds = [1, 2, 3, 4, 5, 6, 7]; // Include all destinations from contract including LNMIIT Jaipur
+  const destinationIds = [1, 2, 3, 4, 5, 6, 7, 8];
 
   const destinationQueries = destinationIds.map((id) => ({
-    id, // Add id for easier debugging
+    id: id.toString(),
     name: useReadContract({
       ...contract,
-      functionName: "destinationNames",
+      functionName: "destinationNames", 
       args: [BigInt(id)],
     }),
     pool: useReadContract({
@@ -179,217 +161,162 @@ export default function ExplorePage() {
     }),
     placeValue: useReadContract({
       ...contract,
-      functionName: "placeValues",
+      functionName: "placeValues", 
       args: [BigInt(id)],
     }),
   }));
 
-  // Fetch all destinations data
+  // Fix hydration by ensuring client-side only rendering
   useEffect(() => {
+    setMounted(true);
+    
+    // Load Leaflet CSS and JS only on client side
+    if (typeof window !== "undefined") {
+      // Load CSS via CDN to avoid hydration issues
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+      link.crossOrigin = '';
+      
+      if (!document.querySelector('link[href*="leaflet.css"]')) {
+        document.head.appendChild(link);
+      }
+
+      // Load Leaflet JS
+      if (!L) {
+        import("leaflet").then((leaflet) => {
+          L = leaflet.default;
+          delete (L.Icon.Default.prototype as any)._getIconUrl;
+          L.Icon.Default.mergeOptions({
+            iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+            iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+            shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+          });
+          setMapReady(true);
+        });
+      } else {
+        setMapReady(true);
+      }
+      
+      return () => {
+        if (document.head.contains(link)) {
+          document.head.removeChild(link);
+        }
+      };
+    }
+  }, []);
+
+  // Fetch destinations data only after hydration
+  useEffect(() => {
+    if (!mounted) return; // Wait for hydration
+
     const fetchDestinations = async () => {
-      console.log("=== FETCH DESTINATIONS USEEFFECT TRIGGERED ===");
       setLoading(true);
-      try {
-        const destinationsData: Destination[] = [];
+      const destinationsData: Destination[] = [];
 
-        console.log("Fetching destinations for IDs:", destinationIds);
-        console.log("Number of destinationQueries:", destinationQueries.length);
-        console.log("destinationQueries:", destinationQueries);
+      for (let i = 0; i < destinationIds.length; i++) {
+        const destId = destinationIds[i];
+        const nameQuery = destinationQueries[i].name;
+        const poolQuery = destinationQueries[i].pool;
 
-        for (let i = 0; i < destinationIds.length; i++) {
-          const destId = destinationIds[i];
-          const nameQuery = destinationQueries[i].name;
-          const poolQuery = destinationQueries[i].pool;
-          const placeValueQuery = destinationQueries[i].placeValue;
-
-          console.log(`Destination ${destId}:`, {
-            nameLoading: nameQuery.isLoading,
-            poolLoading: poolQuery.isLoading,
-            placeValueLoading: placeValueQuery.isLoading,
-            nameData: nameQuery.data,
-            nameError: nameQuery.error,
-            poolData: poolQuery.data,
-            poolError: poolQuery.error,
-            placeValueData: placeValueQuery.data,
-            placeValueError: placeValueQuery.error,
-          });
-
-          // Log errors specifically
-          if (nameQuery.error)
-            console.error(`Name query error for ${destId}:`, nameQuery.error);
-          if (poolQuery.error)
-            console.error(`Pool query error for ${destId}:`, poolQuery.error);
-          if (placeValueQuery.error)
-            console.error(
-              `PlaceValue query error for ${destId}:`,
-              placeValueQuery.error
-            );
-
-          // Skip if any query is still loading
-          if (
-            nameQuery.isLoading ||
-            poolQuery.isLoading ||
-            placeValueQuery.isLoading
-          ) {
-            continue;
-          }
-
-          const name = nameQuery.data as string;
-          const pool = poolQuery.data as bigint;
-          const placeValue = placeValueQuery.data as bigint;
-
-          console.log(`Processing destination ${destId}:`, {
-            name,
-            pool: pool?.toString(),
-            placeValue: placeValue?.toString(),
-          });
-
-          // Only include destinations that have names set in the contract
-          if (name && name.trim() !== "") {
-            // For missing pool/placeValue data, use defaults
-            const poolAmount = pool || BigInt(0);
-            const placeValueAmount = placeValue || BigInt(0);
-
-            console.log(
-              `Creating destination for ${destId} with name: ${name}, pool: ${poolAmount.toString()}, placeValue: ${placeValueAmount.toString()}`
-            );
-
-            // Get static data from centralized source
-            const staticData = destinationsById[destId.toString()];
-
-            if (staticData) {
-              const destination = {
-                id: destId.toString(),
-                name,
-                rewardPool: poolAmount
-                  ? Math.round(parseFloat(formatEther(poolAmount)))
-                  : 0,
-                participants: Math.floor(Math.random() * 30) + 5, // Random for demo
-                ...staticData,
-              };
-
-              console.log(`Adding destination:`, destination);
-              destinationsData.push(destination);
-            }
-          }
+        if (nameQuery.isLoading || poolQuery.isLoading) {
+          continue;
         }
 
-        console.log("Final destinations data:", destinationsData);
-        setDestinations(destinationsData);
-      } catch (error) {
-        console.error("Failed to fetch destinations:", error);
-      } finally {
-        setLoading(false);
+        const name = nameQuery.data as string;
+        const pool = poolQuery.data as bigint;
+
+        if (name && name.trim() !== "") {
+          const poolAmount = pool || BigInt(0);
+          const staticData = destinationsById[destId.toString()];
+
+          if (staticData) {
+            const destination: Destination = {
+              id: destId.toString(),
+              name,
+              description: staticData.description,
+              image: staticData.image,
+              coordinates: staticData.coordinates,
+              difficulty: staticData.difficulty as "Easy" | "Medium" | "Hard",
+              rewardPool: poolAmount ? parseFloat(formatEther(poolAmount)) : 0,
+              participants: Math.floor(Math.random() * 30) + 5,
+              estimatedTime: staticData.estimatedTime,
+              tags: staticData.tags,
+            };
+            
+            destinationsData.push(destination);
+          }
+        }
       }
+
+      setDestinations(destinationsData);
+      setLoading(false);
     };
 
-    // Wait for all queries to be ready
     const allQueriesReady = destinationQueries.every(
-      (queries) =>
-        !queries.name.isLoading &&
-        !queries.pool.isLoading &&
-        !queries.placeValue.isLoading
+      (queries) => !queries.name.isLoading && !queries.pool.isLoading
     );
-
-    console.log("All queries ready:", allQueriesReady);
 
     if (allQueriesReady) {
       fetchDestinations();
     }
   }, [
-    destinationQueries
-      .map(
-        (q) =>
-          `${q.name.isLoading}-${q.pool.isLoading}-${q.placeValue.isLoading}`
-      )
-      .join(","),
+    mounted,
+    destinationQueries.map(q => `${q.name.isLoading}-${q.pool.isLoading}`).join(",")
   ]);
 
-  useEffect(() => {
-    setMounted(true);
-    // Import leaflet CSS dynamically
-    if (typeof window !== "undefined") {
-      import("leaflet/dist/leaflet.css");
-    }
-  }, []);
-
-  const commitment = commitmentData as
+  // Process commitment data
+  const commitment = commitmentData as 
     | { destinationId: bigint; amountInPool: bigint; isProcessed: boolean }
     | undefined;
 
-  const isAnyQuestStaked =
-    commitment &&
-    commitment.amountInPool > BigInt(0) &&
-    !commitment.isProcessed;
-  const activeQuestId = isAnyQuestStaked
-    ? commitment.destinationId.toString()
-    : null;
+  const isAnyQuestStaked = commitment && commitment.amountInPool > BigInt(0) && !commitment.isProcessed;
+  const activeQuestId = isAnyQuestStaked ? commitment.destinationId.toString() : null;
 
   const getDifficultyColor = (difficulty: string): string => {
     switch (difficulty) {
-      case "Easy":
-        return "text-[#00D4FF] border-[#00D4FF]";
-      case "Medium":
-        return "text-[#FF9500] border-[#FF9500]";
-      case "Hard":
-        return "text-[#FF4D94] border-[#FF4D94]";
-      default:
-        return "text-[#666666] border-[#666666]";
+      case "Easy": return "text-[#00D4FF] border-[#00D4FF]";
+      case "Medium": return "text-[#FF9500] border-[#FF9500]";
+      case "Hard": return "text-[#FF4D94] border-[#FF4D94]";
+      default: return "text-[#666666] border-[#666666]";
     }
   };
 
   const getStatusBadge = (destination: Destination): JSX.Element => {
     if (activeQuestId === destination.id) {
-      return (
-        <Badge className="bg-[#FF4D94] text-white font-pixel">
-          Active Quest
-        </Badge>
-      );
+      return <Badge className="bg-[#FF4D94] text-white font-pixel">Active Quest</Badge>;
     }
-    return (
-      <Badge className="bg-[#000000] text-[#00D4FF] border border-[#333333] font-pixel">
-        Available
-      </Badge>
-    );
+    return <Badge className="bg-[#000000] text-[#00D4FF] border border-[#333333] font-pixel">Available</Badge>;
   };
 
-  const filteredDestinations =
-    filterDifficulty === "all"
-      ? destinations
-      : destinations.filter((dest) => dest.difficulty === filterDifficulty);
+  const filteredDestinations = filterDifficulty === "all"
+    ? destinations
+    : destinations.filter(dest => dest.difficulty === filterDifficulty);
 
-  const mapCenter: [number, number] = [23, 78]; // Centered to include Jaipur and other Indian destinations
+  const mapCenter: [number, number] = [23, 78];
 
-  const selectedDestination = destinations.find(
-    (d) => d.id === selectedDestinationId
-  );
-
-  if (loading) {
+  // Prevent hydration mismatch - show loading until fully mounted and ready
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-[#000000] p-6 flex items-center justify-center">
-        <div className="text-[#00D4FF] font-pixel text-xl">
-          Loading destinations...
-        </div>
+        <div className="text-[#00D4FF] font-pixel text-xl">Loading destinations...</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#000000] p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto relative">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 space-y-4 md:space-y-0">
           <div>
-            <h1 className="font-pixel text-4xl text-[#00D4FF]">
-              Explore Destinations
-            </h1>
-            <p className="text-[#FFFFFF] mt-2">
-              Discover amazing places and start your adventure
-            </p>
+            <h1 className="font-pixel text-4xl text-[#00D4FF]">Explore Destinations</h1>
+            <p className="text-[#FFFFFF] mt-2">Discover amazing places and start your adventure</p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            {/* Filter Buttons */}
+            {/* Difficulty Filter */}
             <div className="flex items-center space-x-2">
               <span className="text-sm text-[#FFFFFF]">Difficulty:</span>
               <div className="flex bg-[#000000] rounded-lg p-1 border border-[#333333]">
@@ -445,14 +372,16 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {/* Map View */}
-        {viewMode === "map" && mounted && (
-          <div className="relative bg-[#000000] border border-[#333333] rounded-lg overflow-hidden h-[650px]">
-            <MapContainer
-              center={mapCenter}
-              zoom={5}
-              style={{ height: "100%", width: "100%" }}
-              className="z-10"
+        {/* Map View - Only render when fully ready to prevent hydration issues */}
+        {viewMode === "map" && mapReady && (
+          <div 
+            className="relative bg-[#000000] border border-[#333333] rounded-lg overflow-hidden h-[650px]"
+            style={{ zIndex: 1 }}
+          >
+            <MapContainer 
+              center={mapCenter} 
+              zoom={5} 
+              style={{ height: "100%", width: "100%", zIndex: 1 }}
             >
               <MapStyle />
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -468,17 +397,11 @@ export default function ExplorePage() {
                 return (
                   <Marker
                     key={destination.id}
-                    position={[
-                      destination.coordinates.lat,
-                      destination.coordinates.lng,
-                    ]}
+                    position={[destination.coordinates.lat, destination.coordinates.lng]}
                     icon={icon}
                     eventHandlers={{
                       click: () => {
-                        if (
-                          !isAnyQuestStaked ||
-                          activeQuestId === destination.id
-                        ) {
+                        if (!isAnyQuestStaked || activeQuestId === destination.id) {
                           setSelectedDestinationId(destination.id);
                         }
                       },
@@ -487,68 +410,50 @@ export default function ExplorePage() {
                     <Popup>
                       <div className="p-3 bg-[#000000] text-[#FFFFFF]">
                         <div className="flex items-center justify-between mb-3">
-                          <h3 className="font-pixel text-lg text-[#00D4FF]">
-                            {destination.name}
-                          </h3>
+                          <h3 className="font-pixel text-lg text-[#00D4FF]">{destination.name}</h3>
                           {getStatusBadge(destination)}
                         </div>
-                        <p className="text-sm text-[#FFFFFF] mb-3">
-                          {destination.description}
-                        </p>
+                        <p className="text-sm text-[#FFFFFF] mb-3">{destination.description}</p>
                         <div className="flex items-center justify-between text-xs mb-3">
                           <div className="flex items-center space-x-2">
                             <Trophy className="w-3 h-3 text-[#FF9500]" />
-                            <span className="text-[#FF9500] font-bold">
-                              {destination.rewardPool} ETH Pool
-                            </span>
+                            <span className="text-[#FF9500] font-bold">{destination.rewardPool} TMON Pool</span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Users className="w-3 h-3 text-[#FFFFFF]" />
-                            <span className="text-[#FFFFFF]">
-                              {destination.participants}
-                            </span>
+                            <span className="text-[#FFFFFF]">{destination.participants}</span>
                           </div>
                         </div>
-                        {(() => {
-                          if (activeQuestId === destination.id) {
-                            return (
-                              <Button
-                                size="sm"
-                                className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
-                              >
-                                View Quest
-                              </Button>
-                            );
-                          } else if (isAnyQuestStaked) {
-                            return (
-                              <Button
-                                disabled
-                                size="sm"
-                                className="w-full bg-[#333333] text-[#666666] cursor-not-allowed font-pixel"
-                              >
-                                Quest Active
-                              </Button>
-                            );
-                          } else {
-                            return (
-                              <Button
-                                size="sm"
-                                className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
-                                onClick={() =>
-                                  setSelectedDestinationId(destination.id)
-                                }
-                              >
-                                Start Quest
-                              </Button>
-                            );
-                          }
-                        })()}
+                        {activeQuestId === destination.id ? (
+                          <Button size="sm" className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel">
+                            View Quest
+                          </Button>
+                        ) : isAnyQuestStaked ? (
+                          <Button disabled size="sm" className="w-full bg-[#333333] text-[#666666] cursor-not-allowed font-pixel">
+                            Quest Active
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
+                            onClick={() => setSelectedDestinationId(destination.id)}
+                          >
+                            Start Quest
+                          </Button>
+                        )}
                       </div>
                     </Popup>
                   </Marker>
                 );
               })}
             </MapContainer>
+          </div>
+        )}
+
+        {/* Loading state for map */}
+        {viewMode === "map" && !mapReady && (
+          <div className="relative bg-[#000000] border border-[#333333] rounded-lg overflow-hidden h-[650px] flex items-center justify-center">
+            <div className="text-[#00D4FF] font-pixel text-xl">Loading map...</div>
           </div>
         )}
 
@@ -571,21 +476,10 @@ export default function ExplorePage() {
               >
                 <CardHeader className="p-0">
                   <div className="relative h-48 overflow-hidden rounded-t-lg">
-                    <Image
-                      src={destination.image}
-                      alt={destination.name}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute top-3 right-3">
-                      {getStatusBadge(destination)}
-                    </div>
+                    <Image src={destination.image} alt={destination.name} fill className="object-cover" />
+                    <div className="absolute top-3 right-3">{getStatusBadge(destination)}</div>
                     <div className="absolute top-3 left-3">
-                      <Badge
-                        className={`${getDifficultyColor(
-                          destination.difficulty
-                        )} bg-[#000000] border font-pixel`}
-                      >
+                      <Badge className={`${getDifficultyColor(destination.difficulty)} bg-[#000000] border font-pixel`}>
                         {destination.difficulty}
                       </Badge>
                     </div>
@@ -593,21 +487,13 @@ export default function ExplorePage() {
                 </CardHeader>
 
                 <CardContent className="p-4">
-                  <CardTitle className="font-pixel text-lg mb-2 text-[#FFFFFF]">
-                    {destination.name}
-                  </CardTitle>
-
-                  <p className="text-sm text-[#FFFFFF] mb-4 line-clamp-2">
-                    {destination.description}
-                  </p>
+                  <CardTitle className="font-pixel text-lg mb-2 text-[#FFFFFF]">{destination.name}</CardTitle>
+                  <p className="text-sm text-[#FFFFFF] mb-4 line-clamp-2">{destination.description}</p>
 
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1 mb-4">
                     {destination.tags?.slice(0, 3).map((tag, index) => (
-                      <Badge
-                        key={index}
-                        className="bg-[#000000] text-[#FFFFFF] border border-[#333333] text-xs px-2 py-0 font-pixel"
-                      >
+                      <Badge key={index} className="bg-[#000000] text-[#FFFFFF] border border-[#333333] text-xs px-2 py-0 font-pixel">
                         {tag}
                       </Badge>
                     ))}
@@ -617,75 +503,62 @@ export default function ExplorePage() {
                   <div className="flex items-center justify-between text-sm mb-4">
                     <div className="flex items-center space-x-1">
                       <Trophy className="w-4 h-4 text-[#FF9500]" />
-                      <span className="text-[#FF9500] font-bold font-pixel">
-                        {destination.rewardPool} ETH Pool
-                      </span>
+                      <span className="text-[#FF9500] font-bold font-pixel">{destination.rewardPool} TMON</span>
                     </div>
                     <div className="flex items-center space-x-1 text-[#FFFFFF]">
                       <Users className="w-4 h-4" />
-                      <span className="font-pixel">
-                        {destination.participants}
-                      </span>
+                      <span className="font-pixel">{destination.participants}</span>
                     </div>
                     <div className="flex items-center space-x-1 text-[#FFFFFF]">
                       <Clock className="w-4 h-4" />
-                      <span className="font-pixel">
-                        {destination.estimatedTime}
-                      </span>
+                      <span className="font-pixel">{destination.estimatedTime}</span>
                     </div>
                   </div>
 
                   {/* Action Button */}
-                  {(() => {
-                    if (activeQuestId === destination.id) {
-                      return (
-                        <Button className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel">
-                          View Quest
-                        </Button>
-                      );
-                    } else if (isAnyQuestStaked) {
-                      return (
-                        <Button
-                          disabled
-                          className="w-full bg-[#333333] text-[#666666] cursor-not-allowed font-pixel"
-                        >
-                          Quest Active
-                        </Button>
-                      );
-                    } else {
-                      return (
-                        <Button
-                          className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDestinationId(destination.id);
-                          }}
-                        >
-                          Start Quest
-                        </Button>
-                      );
-                    }
-                  })()}
+                  {activeQuestId === destination.id ? (
+                    <Button className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel">
+                      View Quest
+                    </Button>
+                  ) : isAnyQuestStaked ? (
+                    <Button disabled className="w-full bg-[#333333] text-[#666666] cursor-not-allowed font-pixel">
+                      Quest Active
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full bg-[#00D4FF] text-black hover:bg-[#00B7E6] font-pixel"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDestinationId(destination.id);
+                      }}
+                    >
+                      Start Quest
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
 
-        {/* Modal */}
+        {/* Fixed Modal with proper z-index positioning */}
         {selectedDestinationId && (
-          <StakingModal
-            destinationId={selectedDestinationId}
-            onClose={() => setSelectedDestinationId(null)}
-            onAcceptQuest={(amount: number) => {
-              if (selectedDestination) {
-                console.log(
-                  `Accepted quest for ${selectedDestination.name} with ${amount} WNDR`
-                );
-              }
-              setSelectedDestinationId(null);
-            }}
-          />
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm" 
+              onClick={() => setSelectedDestinationId(null)} 
+            />
+            <div className="relative z-[10000] max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              <StakingModal
+                destinationId={selectedDestinationId}
+                onClose={() => setSelectedDestinationId(null)}
+                onAcceptQuest={(amount: number) => {
+                  console.log(`Accepted quest for destination ${selectedDestinationId} with ${amount} TMON`);
+                  setSelectedDestinationId(null);
+                }}
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>
