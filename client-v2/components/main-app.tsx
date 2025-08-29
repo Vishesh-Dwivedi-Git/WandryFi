@@ -6,7 +6,6 @@ import ExplorePage from "@/components/explore-page";
 import LeaderboardPage from "@/components/leaderboard-page";
 import MyTravelPage from "@/components/my-travel-page";
 import NavigationView from "@/components/navigation-view";
-import { Destination } from "@/lib/destinations";
 
 export type PageType = "explore" | "leaderboard" | "my-travel";
 

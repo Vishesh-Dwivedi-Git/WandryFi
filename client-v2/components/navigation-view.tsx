@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { useWanderfy } from "@/contexts/wanderify-context";
 import dynamic from "next/dynamic";
-import { Destination, destinations } from "@/lib/destinations";
 import { useAccount, useWriteContract } from "wagmi";
 import { useWanderifyContract } from "@/lib/contract";
 
