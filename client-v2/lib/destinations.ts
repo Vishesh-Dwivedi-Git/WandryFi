@@ -1,99 +1,93 @@
-export interface Destination {
-  id: string;
-  name: string;
-  image: string;
-  rewardPool: number;
-  difficulty: "Easy" | "Medium" | "Hard";
-  description: string;
-  coordinates: { lat: number; lng: number };
-  participants?: number;
-  estimatedTime?: string;
-  tags?: string[];
-}
-
-export const destinations: Destination[] = [
+// Static destination data with coordinates
+export const destinationsById: Record<
+  string,
   {
-    id: "0",
-    name: "Crystal Caves",
-    image: "/crystal-cave-glowing.png",
-    rewardPool: 1500,
-    difficulty: "Medium",
-    description:
-      "A luminous cavern filled with giant, glowing crystals that pulse with a soft, ethereal light.",
-    coordinates: { lat: 27.1751, lng: 78.0421 },
-    participants: 15,
-    estimatedTime: "3 days",
-    tags: ["Cave", "Adventure", "Luminous"],
-  },
-  {
+    id: string;
+    name: string;
+    image: string;
+    coordinates: { lat: number; lng: number };
+    difficulty: "Easy" | "Medium" | "Hard";
+    description: string;
+    estimatedTime?: string;
+    tags?: string[];
+  }
+> = {
+  "1": {
     id: "1",
-    name: "Coral Reef City",
-    image: "/coral-reef-underwater-colorful.png",
-    rewardPool: 1200,
-    difficulty: "Easy",
-    description:
-      "A vibrant underwater metropolis built within a massive, colorful coral reef, teeming with exotic marine life.",
-    coordinates: { lat: -20.4333, lng: 148.7 },
-    participants: 25,
-    estimatedTime: "2 days",
-    tags: ["Underwater", "City", "Marine Life"],
-  },
-  {
-    id: "2",
-    name: "Floating Temples of Aeridor",
-    image: "/temple-clouds-floating.png",
-    rewardPool: 2500,
-    difficulty: "Hard",
-    description:
-      "Ancient temples that float amongst the clouds, held aloft by mysterious forces and guarded by wind spirits.",
-    coordinates: { lat: 27.9881, lng: 86.925 },
-    participants: 8,
-    estimatedTime: "5 days",
-    tags: ["Temples", "Floating", "Ancient"],
-  },
-  {
-    id: "3",
-    name: "Sunset Peak",
-    image: "/mountain-peak-sunset.png",
-    rewardPool: 1800,
+    name: "Crystal Cave",
+    image: "/crystal-cave-glowing.png",
+    coordinates: { lat: 28.6139, lng: 77.209 }, // Delhi area
     difficulty: "Medium",
-    description:
-      "A towering mountain peak that offers breathtaking panoramic views of the world, especially at sunset.",
-    coordinates: { lat: 45.8326, lng: 6.8652 },
-    participants: 18,
+    description: "Explore the mystical crystal caves hidden in the mountains",
     estimatedTime: "2 days",
-    tags: ["Mountain", "Sunset", "Views"],
+    tags: ["Adventure", "Nature", "Mystical"],
   },
-  {
-    id: "4",
-    name: "Whispering Waterfalls",
-    image: "/waterfall-forest-mist.png",
-    rewardPool: 1100,
-    difficulty: "Easy",
-    description:
-      "A serene forest sanctuary where waterfalls cascade into crystal-clear pools, surrounded by lush, mist-covered flora.",
-    coordinates: { lat: -13.1631, lng: -72.545 },
-    participants: 30,
-    estimatedTime: "1 day",
-    tags: ["Waterfall", "Forest", "Serene"],
-  },
-  {
-    id: "5",
-    name: "Oasis of the Golden Sands",
-    image: "/desert-oasis-palm-trees.png",
-    rewardPool: 2000,
+  "2": {
+    id: "2",
+    name: "Mountain Peak",
+    image: "/mountain-peak-sunset.png",
+    coordinates: { lat: 27.9881, lng: 86.925 }, // Everest region
     difficulty: "Hard",
-    description:
-      "A hidden oasis in the heart of a vast desert, with golden sands, lush palm trees, and a spring of life-giving water.",
-    coordinates: { lat: 29.9792, lng: 31.1342 },
-    participants: 12,
-    estimatedTime: "4 days",
-    tags: ["Desert", "Oasis", "Hidden"],
+    description: "Conquer the highest peaks and witness breathtaking views",
+    estimatedTime: "5 days",
+    tags: ["Adventure", "Extreme", "Scenic"],
   },
-];
+  "3": {
+    id: "3",
+    name: "Coral Reef",
+    image: "/coral-reef-underwater-colorful.png",
+    coordinates: { lat: 11.6234, lng: 92.7265 }, // Andaman Islands
+    difficulty: "Easy",
+    description: "Dive into vibrant coral reefs teeming with marine life",
+    estimatedTime: "1 day",
+    tags: ["Water", "Marine", "Relaxing"],
+  },
+  "4": {
+    id: "4",
+    name: "Temple in Clouds",
+    image: "/temple-clouds-floating.png",
+    coordinates: { lat: 27.1751, lng: 88.2637 }, // Darjeeling area
+    difficulty: "Medium",
+    description: "Visit ancient temples shrouded in mystical clouds",
+    estimatedTime: "3 days",
+    tags: ["Spiritual", "Ancient", "Mystical"],
+  },
+  "5": {
+    id: "5",
+    name: "Desert Oasis",
+    image: "/desert-oasis-palm-trees.png",
+    coordinates: { lat: 26.9124, lng: 70.9128 }, // Thar Desert
+    difficulty: "Medium",
+    description: "Discover hidden oases in the vast desert landscape",
+    estimatedTime: "2 days",
+    tags: ["Desert", "Adventure", "Unique"],
+  },
+  "6": {
+    id: "6",
+    name: "LNMIIT Jaipur",
+    image: "/placeholder.jpg",
+    coordinates: { lat: 26.93377, lng: 75.9236 }, // Correct LNMIIT coordinates
+    difficulty: "Easy",
+    description: "Visit the prestigious LNMIIT campus in Jaipur",
+    estimatedTime: "1 day",
+    tags: ["Education", "Technology", "Modern"],
+  },
+  "7": {
+    id: "7",
+    name: "Waterfall Paradise",
+    image: "/waterfall-forest-mist.png",
+    coordinates: { lat: 11.4062, lng: 76.6947 }, // Western Ghats
+    difficulty: "Easy",
+    description: "Experience majestic waterfalls surrounded by lush forests",
+    estimatedTime: "2 days",
+    tags: ["Water", "Nature", "Peaceful"],
+  },
+};
 
-export const destinationsById: Record<string, Destination> =
-  destinations.reduce((acc, dest) => {
-    acc[dest.id] = dest;
-    return acc;
-  }, {} as Record<string, Destination>);
+// Export individual destination lookup function
+export const getDestinationById = (id: string) => {
+  return destinationsById[id];
+};
+
+// Export all destinations as array
+export const allDestinations = Object.values(destinationsById);

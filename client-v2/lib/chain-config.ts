@@ -11,7 +11,7 @@ export const CHAIN_CONFIGS: Record<number, ChainConfig> = {
   31337: {
     chainId: 31337,
     name: "Anvil Local",
-    contractAddress: "0x610178da211fef7d417bc0e6fed39f05609ad788",
+    contractAddress: "0x5fbdb2315678afecb367f032d93f642f64180aa3",
     rpcUrl: "http://127.0.0.1:8545",
   },
   // Ethereum Mainnet
@@ -54,6 +54,13 @@ export function getChainConfig(chainId?: number): ChainConfig {
 }
 
 export function getContractAddress(chainId?: number): `0x${string}` {
+  // First check for environment variable
+  const envAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+  if (envAddress && envAddress.startsWith('0x')) {
+    return envAddress as `0x${string}`;
+  }
+
+  // Fallback to chain-specific config
   return getChainConfig(chainId).contractAddress;
 }
 

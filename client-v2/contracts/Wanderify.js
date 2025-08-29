@@ -3,6 +3,6 @@ import abi from "./Wanderify.json";
 export const ABI = abi.abi;
 
 export const contractAddr = {
-  31337: "0x610178da211fef7d417bc0e6fed39f05609ad788",
+  31337: "0x5fbdb2315678afecb367f032d93f642f64180aa3",
   10143: "",
 };

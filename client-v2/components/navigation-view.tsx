@@ -18,6 +18,8 @@ import {
 import { useWanderfy } from "@/contexts/wanderify-context";
 import dynamic from "next/dynamic";
 import { Destination, destinations } from "@/lib/destinations";
+import { useAccount, useWriteContract } from "wagmi";
+import { useWanderifyContract } from "@/lib/contract";
 
 let L: any = null;
 
@@ -250,16 +252,23 @@ function RealTimeLocationTracker({
           onError("");
 
           // Auto-center map
-          const bounds = L.latLngBounds([
-            [location.lat, location.lng],
-            [destination.lat, destination.lng],
-          ]);
-          map.fitBounds(bounds, {
-            padding: [60, 60],
-            maxZoom: 16,
-            animate: true,
-            duration: 1.0,
-          });
+          const userLat = location.lat;
+          const userLng = location.lng;
+          const destLat = destination.coordinates?.lat;
+          const destLng = destination.coordinates?.lng;
+
+          if (userLat && userLng && destLat && destLng) {
+            const bounds = L.latLngBounds([
+              [userLat, userLng],
+              [destLat, destLng],
+            ]);
+            map.fitBounds(bounds, {
+              padding: [60, 60],
+              maxZoom: 16,
+              animate: true,
+              duration: 1.0,
+            });
+          }
         },
         (error) => {
           onError(error.message);
@@ -354,6 +363,9 @@ export default function NavigationView({
   onClose,
 }: NavigationViewProps) {
   const { completeQuest } = useWanderfy();
+  const { address } = useAccount();
+  const contract = useWanderifyContract();
+  const { writeContract } = useWriteContract();
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locationError, setLocationError] = useState<string>("");
   const [distanceToTarget, setDistanceToTarget] = useState<number>(Infinity);
@@ -386,12 +398,12 @@ export default function NavigationView({
   }, []);
 
   useEffect(() => {
-    if (userLocation) {
+    if (userLocation && destination.coordinates) {
       const distance = calculateDistance(
         userLocation.lat,
         userLocation.lng,
-        destination.lat,
-        destination.lng
+        destination.coordinates.lat,
+        destination.coordinates.lng
       );
       setDistanceToTarget(distance);
     }
@@ -441,19 +453,63 @@ export default function NavigationView({
 
   const handleCheckIn = async () => {
     if (distanceToTarget > 50) return;
+    if (!address) {
+      setLocationError("Please connect your wallet");
+      return;
+    }
+    if (!userLocation) {
+      setLocationError("GPS location not available");
+      return;
+    }
 
     setCheckingIn(true);
 
-    setTimeout(() => {
-      setIsCheckedIn(true);
+    try {
+      // Call backend verification service
+      const response = await fetch("http://localhost:3001/api/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "your-api-key-here", // Add your API key
+        },
+        body: JSON.stringify({
+          walletAddress: address,
+          destinationId: destination.id,
+          userLat: userLocation.lat,
+          userLon: userLocation.lng,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Verification failed");
+      }
+
+      const { signature } = await response.json();
+      console.log(signature);
+      // Call smart contract checkIn function with the signature
+      await writeContract({
+        ...contract,
+        functionName: "checkIn",
+        args: [signature],
+      });
+
+      // Complete the quest in the frontend
       completeQuest(destination.id);
 
+      setIsCheckedIn(true);
       setTimeout(() => {
         setCheckingIn(false);
         setIsCheckedIn(false);
         onClose();
       }, 3000);
-    }, 2000);
+    } catch (error) {
+      console.error("Check-in failed:", error);
+      setLocationError(
+        error instanceof Error ? error.message : "Check-in failed"
+      );
+      setCheckingIn(false);
+    }
   };
 
   const canCheckIn = distanceToTarget <= 50 && !checkingIn && !isCheckedIn;
@@ -772,74 +828,90 @@ export default function NavigationView({
             />
 
             {/* Quest destination */}
-            {createDestinationIcon(distanceToTarget) && (
-              <Marker
-                position={[destination.lat, destination.lng]}
-                icon={createDestinationIcon(distanceToTarget)!}
-              >
-                <Popup>
-                  <div className="p-4 text-center font-mono">
-                    <h3 className="text-cyan-400 font-bold text-lg mb-2">
-                      {destination.name}
-                    </h3>
-                    <p className="text-sm text-white mb-3">
-                      {destination.description}
-                    </p>
-                    <div className="flex items-center justify-center space-x-3 mb-3">
-                      <Badge className="bg-orange-600 text-black font-bold text-xs">
-                        {destination.difficulty}
-                      </Badge>
-                      <div className="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold">
-                        +{destination.xpReward}XP
+            {createDestinationIcon(distanceToTarget) &&
+              destination.coordinates && (
+                <Marker
+                  position={[
+                    destination.coordinates.lat,
+                    destination.coordinates.lng,
+                  ]}
+                  icon={createDestinationIcon(distanceToTarget)!}
+                >
+                  <Popup>
+                    <div className="p-4 text-center font-mono">
+                      <h3 className="text-cyan-400 font-bold text-lg mb-2">
+                        {destination.name}
+                      </h3>
+                      <p className="text-sm text-white mb-3">
+                        {destination.description}
+                      </p>
+                      <div className="flex items-center justify-center space-x-3 mb-3">
+                        <Badge className="bg-orange-600 text-black font-bold text-xs">
+                          {destination.difficulty}
+                        </Badge>
+                        <div className="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold">
+                          +{destination.xpReward}XP
+                        </div>
                       </div>
+                      <p className="text-cyan-400 font-bold">
+                        Distance:{" "}
+                        {distanceToTarget < 1000
+                          ? `${Math.round(distanceToTarget)}m`
+                          : `${(distanceToTarget / 1000).toFixed(1)}km`}
+                      </p>
                     </div>
-                    <p className="text-cyan-400 font-bold">
-                      Distance:{" "}
-                      {distanceToTarget < 1000
-                        ? `${Math.round(distanceToTarget)}m`
-                        : `${(distanceToTarget / 1000).toFixed(1)}km`}
-                    </p>
-                  </div>
-                </Popup>
-              </Marker>
-            )}
+                  </Popup>
+                </Marker>
+              )}
 
             {/* Quest path line */}
-            <Polyline
-              positions={[
-                [userLocation.lat, userLocation.lng],
-                [destination.lat, destination.lng],
-              ]}
-              pathOptions={{
-                color: "#06b6d4",
-                weight: 3,
-                opacity: 1,
-              }}
-            />
+            {destination.coordinates && (
+              <Polyline
+                positions={[
+                  [userLocation.lat, userLocation.lng],
+                  [destination.coordinates.lat, destination.coordinates.lng],
+                ]}
+                pathOptions={{
+                  color: "#06b6d4",
+                  weight: 3,
+                  opacity: 1,
+                }}
+              />
+            )}
 
             {/* Check-in zone */}
-            <Circle
-              center={[destination.lat, destination.lng]}
-              radius={50}
-              pathOptions={{
-                color: isInRange ? "#16a34a" : "#dc2626",
-                fillColor: isInRange ? "#16a34a" : "#dc2626",
-                fillOpacity: isInRange ? 0.3 : 0.1,
-                weight: 3,
-              }}
-            />
+            {destination.coordinates && (
+              <Circle
+                center={[
+                  destination.coordinates.lat,
+                  destination.coordinates.lng,
+                ]}
+                radius={50}
+                pathOptions={{
+                  color: isInRange ? "#16a34a" : "#dc2626",
+                  fillColor: isInRange ? "#16a34a" : "#dc2626",
+                  fillOpacity: isInRange ? 0.3 : 0.1,
+                  weight: 3,
+                }}
+              />
+            )}
 
             {/* Approach zone */}
-            <Circle
-              center={[destination.lat, destination.lng]}
-              radius={100}
-              pathOptions={{
-                color: "#ea580c",
-                fillColor: "transparent",
-                weight: 2,
-                opacity: 0.8,
-              }}
-            />
+            {destination.coordinates && (
+              <Circle
+                center={[
+                  destination.coordinates.lat,
+                  destination.coordinates.lng,
+                ]}
+                radius={100}
+                pathOptions={{
+                  color: "#ea580c",
+                  fillColor: "transparent",
+                  weight: 2,
+                  opacity: 0.8,
+                }}
+              />
+            )}
           </MapContainer>
         ) : (
           <div className="flex items-center justify-center h-full bg-black">

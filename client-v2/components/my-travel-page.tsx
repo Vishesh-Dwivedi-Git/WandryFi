@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import type { JSX } from "react/jsx-runtime";
 import { useAccount, useReadContract } from "wagmi";
 import { useWanderifyContract } from "@/lib/contract";
-import { formatEther } from "viem";
+import { formatEther, zeroAddress } from "viem";
 import { destinationsById } from "@/lib/destinations";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -266,24 +266,41 @@ const getPixelIcon = (icon: string) => {
 
 const TrophyCard = ({ tokenId }: { tokenId: bigint }) => {
   const contract = useWanderifyContract();
+  const isValidContract =
+    !!contract.address && contract.address !== zeroAddress;
 
   const { data: nftDetailsData, isLoading: isLoadingDetails } = useReadContract(
     {
       ...contract,
       functionName: "getJourneyNFTDetails",
       args: [tokenId],
-      query: { enabled: !!contract.address },
+      query: { enabled: isValidContract },
     }
   );
-  const nftDetails = nftDetailsData as
-    | { destinationName: string; completionDate: bigint }
-    | undefined;
+  // Support both named struct object and tuple array returns
+  const nftDetails = (() => {
+    if (!nftDetailsData) return undefined;
+    const d: any = nftDetailsData as any;
+    const destinationName: string | undefined = d?.destinationName ?? d?.[4];
+    const rawCompletion = d?.completionDate ?? d?.[1];
+    const completionDate: bigint | undefined =
+      typeof rawCompletion === "bigint"
+        ? rawCompletion
+        : rawCompletion != null
+        ? BigInt(rawCompletion)
+        : undefined;
+    if (!destinationName || completionDate == null) return undefined;
+    return { destinationName, completionDate } as {
+      destinationName: string;
+      completionDate: bigint;
+    };
+  })();
 
   const { data: tokenUriData, isLoading: isLoadingUri } = useReadContract({
     ...contract,
     functionName: "tokenURI",
     args: [tokenId],
-    query: { enabled: !!contract.address },
+    query: { enabled: isValidContract },
   });
   const tokenUri = tokenUriData as string | undefined;
 
@@ -296,18 +313,37 @@ const TrophyCard = ({ tokenId }: { tokenId: bigint }) => {
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(true);
 
   useEffect(() => {
-    if (tokenUri) {
-      const url = tokenUri.replace("ipfs://", "https://ipfs.io/ipfs/");
-      fetch(url)
-        .then((res) => res.json())
-        .then((data) => {
+    const load = async () => {
+      if (!tokenUri) {
+        if (!isLoadingUri) setIsLoadingMetadata(false);
+        return;
+      }
+      try {
+        // Handle ipfs:// and data:application/json;base64 URIs
+        if (tokenUri.startsWith("ipfs://")) {
+          const url = tokenUri.replace("ipfs://", "https://ipfs.io/ipfs/");
+          const res = await fetch(url);
+          const data = await res.json();
           setMetadata(data);
-          setIsLoadingMetadata(false);
-        })
-        .catch(() => setIsLoadingMetadata(false));
-    } else if (!isLoadingUri) {
-      setIsLoadingMetadata(false);
-    }
+        } else if (tokenUri.startsWith("data:application/json;base64,")) {
+          const b64 = tokenUri.split(",", 2)[1] || "";
+          const json = JSON.parse(atob(b64));
+          setMetadata(json);
+        } else if (tokenUri.startsWith("data:application/json,")) {
+          const json = JSON.parse(tokenUri.split(",", 2)[1] || "{}");
+          setMetadata(json);
+        } else {
+          const res = await fetch(tokenUri);
+          const data = await res.json();
+          setMetadata(data);
+        }
+      } catch (e) {
+        console.error("Failed to load token metadata:", e);
+      } finally {
+        setIsLoadingMetadata(false);
+      }
+    };
+    load();
   }, [tokenUri, isLoadingUri]);
 
   if (isLoadingDetails || isLoadingMetadata) {
@@ -368,13 +404,15 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
   const { address } = useAccount();
 
   const contract = useWanderifyContract();
+  const isValidContract =
+    !!contract.address && contract.address !== zeroAddress;
 
   const { data: commitmentData, isLoading: isLoadingCommitment } =
     useReadContract({
       ...contract,
       functionName: "commitments",
       args: [address],
-      query: { enabled: !!address, refetchInterval: 5000 }, // keep fresh
+      query: { enabled: !!address && isValidContract, refetchInterval: 5000 }, // keep fresh
     });
   console.log("Commitment Data:", commitmentData);
   const commitment =
@@ -394,13 +432,13 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
     ...contract,
     functionName: "destinationNames",
     args: destinationIdForRead ? [destinationIdForRead] : undefined,
-    query: { enabled: !!destinationIdForRead },
+    query: { enabled: !!destinationIdForRead && isValidContract },
   });
   const { data: destinationMetadataUriData } = useReadContract({
     ...contract,
     functionName: "destinationMetadata",
     args: destinationIdForRead ? [destinationIdForRead] : undefined,
-    query: { enabled: !!destinationIdForRead },
+    query: { enabled: !!destinationIdForRead && isValidContract },
   });
   const destinationNameOnchain = destinationNameData as string | undefined;
   const destinationMetadataUri = destinationMetadataUriData as
@@ -430,7 +468,7 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
     ...contract,
     functionName: "getUserJourneyNFTs",
     args: [address],
-    query: { enabled: !!address },
+    query: { enabled: !!address && isValidContract },
   });
   const tokenIds = tokenIdsData as bigint[] | undefined;
 
@@ -588,20 +626,45 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
 
                           {/* Action Button */}
                           <Button
-                            onClick={() =>
+                            onClick={() => {
+                              // Get correct coordinates from destinations data
+                              const destinationData =
+                                destinationsById[quest.id];
+                              const correctCoordinates =
+                                destinationData?.coordinates || {
+                                  lat: 0,
+                                  lng: 0, // Fallback to {0,0} for unknown destinations
+                                };
+
+                              console.log("=== MY TRAVEL PAGE DEBUG ===");
+                              console.log("Quest ID:", quest.id);
+                              console.log("Destination Data:", destinationData);
+                              console.log(
+                                "Correct Coordinates:",
+                                correctCoordinates
+                              );
+                              console.log("=============================");
+
                               onNavigationView(true, {
-                                id: activeQuest.id,
-                                name: activeQuest.destinationName,
-                                image: activeQuest.image,
+                                id: quest.id,
+                                name: quest.destinationName,
+                                image: quest.image,
                                 rewardPool: 0, // We'll get this from contract
-                                difficulty: "Medium" as const,
-                                description: `Active quest to ${activeQuest.destinationName}`,
-                                coordinates: { lat: 0, lng: 0 }, // Default coordinates
+                                difficulty:
+                                  destinationData?.difficulty || "Medium",
+                                description:
+                                  destinationData?.description ||
+                                  `Active quest to ${quest.destinationName}`,
+                                coordinates: correctCoordinates, // ✅ Use correct coordinates
                                 participants: 1,
-                                estimatedTime: "15 days",
-                                tags: ["Active", "Quest"],
-                              })
-                            }
+                                estimatedTime:
+                                  destinationData?.estimatedTime || "15 days",
+                                tags: destinationData?.tags || [
+                                  "Active",
+                                  "Quest",
+                                ],
+                              });
+                            }}
                             disabled={quest.status !== "ready-for-checkin"}
                             className={cn(
                               "w-full font-pixel py-3",

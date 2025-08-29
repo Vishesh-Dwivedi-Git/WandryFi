@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState } from "react"; // Set default travel date to 2 days from now for testing (instead of 17 days)
+
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { X, CalendarIcon } from "lucide-react";
 import { useWanderfy } from "@/contexts/wanderify-context";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { useWanderifyContract } from "@/lib/contract";
 import { parseEther } from "viem";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { destinationsById } from "@/lib/destinations";
 
 interface StakingModalProps {
   destinationId: string;
@@ -23,9 +33,15 @@ export default function StakingModal({
   onAcceptQuest,
 }: StakingModalProps) {
   const [stakeAmount, setStakeAmount] = useState("");
+  const [travelDate, setTravelDate] = useState<Date>();
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const { acceptQuest } = useWanderfy();
   const { address } = useAccount();
   const { writeContract, isPending } = useWriteContract();
+
+  // Set default travel date to 17 days from now (to ensure > 15 days requirement)
+  const defaultTravelDate = new Date();
+  defaultTravelDate.setDate(defaultTravelDate.getDate() + 16);
 
   const contract = useWanderifyContract();
 
@@ -69,9 +85,7 @@ export default function StakingModal({
 
   const handleAcceptQuest = () => {
     const amount = Number.parseFloat(stakeAmount);
-    if (amount > 0) {
-      const travelDate = new Date();
-      travelDate.setDate(travelDate.getDate() + 17); // Set to 17 days to ensure > 15 days requirement
+    if (amount > 0 && travelDate) {
       const travelDateInSeconds = Math.floor(travelDate.getTime() / 1000);
 
       writeContract(
@@ -86,11 +100,25 @@ export default function StakingModal({
             toast.success("Transaction Sent!", {
               description: `Tx hash: ${hash}`,
             });
+
+            // Get correct coordinates from centralized destination data
+            const destinationData = destinationsById[destinationId];
+            const correctCoordinates = destinationData?.coordinates || {
+              lat: 0,
+              lng: 0, // Fallback to {0,0} for unknown destinations
+            };
+
+            console.log("=== STAKING MODAL DEBUG ===");
+            console.log("Destination ID:", destinationId);
+            console.log("Destination Data:", destinationData);
+            console.log("Correct Coordinates:", correctCoordinates);
+            console.log("============================");
+
             acceptQuest(
               {
                 id: destinationId,
                 name: (destinationName as string) || "Unknown",
-                image: "/placeholder.svg",
+                image: destinationData?.image || "/placeholder.svg",
                 rewardPool: locationPool
                   ? Math.round(
                       parseFloat(
@@ -98,9 +126,13 @@ export default function StakingModal({
                       )
                     )
                   : 0,
-                difficulty: "Medium" as const,
-                description: "Destination from contract",
-                coordinates: { lat: 0, lng: 0 },
+                difficulty: destinationData?.difficulty || "Medium",
+                description:
+                  destinationData?.description || "Destination from contract",
+                coordinates: {
+                  x: correctCoordinates.lng, // Convert lng to x
+                  y: correctCoordinates.lat, // Convert lat to y
+                },
               },
               amount
             );
@@ -166,7 +198,8 @@ export default function StakingModal({
               {(destinationName as string) || "Loading..."}
             </h3>
             <p className="text-muted-foreground mb-4">
-              Stake ETH to prove you will visit this destination within 15 days.
+              Stake ETH to prove you will visit this destination. (Testing mode
+              - shorter dates allowed)
             </p>
 
             <div className="grid grid-cols-1 gap-4">
@@ -193,7 +226,9 @@ export default function StakingModal({
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-neon-cyan rounded-full"></div>
-                <span>Travel to the destination coordinates</span>
+                <span>
+                  Travel to the destination coordinates (Testing mode)
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-neon-cyan rounded-full"></div>
@@ -227,12 +262,114 @@ export default function StakingModal({
             </p>
           </div>
 
+          {/* Travel Date Picker */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="font-pixel text-sm text-foreground">
+                Travel Date
+              </Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setTravelDate(defaultTravelDate)}
+                className="text-xs text-neon-cyan hover:text-neon-cyan/80 font-pixel"
+              >
+                Quick Select (2 days - Testing)
+              </Button>
+            </div>
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal bg-muted border-border focus:border-neon-cyan hover:border-neon-cyan/50 transition-colors",
+                    !travelDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 text-neon-cyan" />
+                  {travelDate ? (
+                    <span className="text-foreground">
+                      {format(travelDate, "PPP")}
+                    </span>
+                  ) : (
+                    <span>Pick a travel date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto p-0 bg-card border-border shadow-lg"
+                align="start"
+              >
+                <Calendar
+                  mode="single"
+                  selected={travelDate}
+                  onSelect={(date) => {
+                    setTravelDate(date);
+                    setCalendarOpen(false);
+                  }}
+                  disabled={(date) => {
+                    // COMMENTED OUT FOR TESTING: Must be at least 15 days in future
+                    // const today = new Date();
+                    // const minDate = new Date(today);
+                    // minDate.setDate(today.getDate() + 15);
+                    // return date < minDate;
+                    return false; // Allow all future dates for testing
+                  }}
+                  initialFocus
+                  className="bg-card border-border"
+                  classNames={{
+                    months:
+                      "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                    month: "space-y-4",
+                    caption:
+                      "flex justify-center pt-1 relative items-center font-pixel text-neon-cyan",
+                    nav: "space-x-1 flex items-center",
+                    nav_button:
+                      "h-7 w-7 bg-transparent p-0 hover:bg-neon-cyan/20 text-neon-cyan border border-transparent hover:border-neon-cyan/50",
+                    nav_button_previous: "absolute left-1",
+                    nav_button_next: "absolute right-1",
+                    table: "w-full border-collapse space-y-1",
+                    head_row: "flex",
+                    head_cell:
+                      "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem] font-pixel",
+                    row: "flex w-full mt-2",
+                    cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent",
+                    day: "h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-neon-cyan/20 hover:text-neon-cyan font-pixel",
+                    day_selected:
+                      "bg-neon-cyan text-background hover:bg-neon-cyan/90 hover:text-background focus:bg-neon-cyan focus:text-background",
+                    day_today: "bg-accent text-accent-foreground",
+                    day_outside: "text-muted-foreground opacity-50",
+                    day_disabled: "text-muted-foreground opacity-50",
+                    day_range_middle:
+                      "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                    day_hidden: "invisible",
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground mt-2">
+              {/* COMMENTED OUT FOR TESTING: Must be at least 15 days from today to complete the quest. */}
+              Select any future date for testing purposes.
+              {travelDate && (
+                <span className="text-neon-cyan ml-1">
+                  Selected:{" "}
+                  {Math.ceil(
+                    (travelDate.getTime() - new Date().getTime()) /
+                      (1000 * 60 * 60 * 24)
+                  )}{" "}
+                  days from now
+                </span>
+              )}
+            </p>
+          </div>
+
           {/* Accept Quest Button */}
           <Button
             onClick={handleAcceptQuest}
             disabled={
               !stakeAmount ||
               Number.parseFloat(stakeAmount) < 10 ||
+              !travelDate ||
               Boolean(isPending) ||
               Boolean(isAlreadyStaked)
             }
