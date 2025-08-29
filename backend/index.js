@@ -31,13 +31,15 @@ const verifierWallet = new ethers.Wallet(VERIFIER_PRIVATE_KEY);
 // Define destinations with latitude, longitude, and country
 // Define destinations with latitude, longitude, and country
 const destinations = {
-  1: { lat: 19.076, lng: 72.8777, country: "IN" }, // Mumbai - Financial Capital
-  2: { lat: 27.1751, lng: 78.0421, country: "IN" }, // Taj Mahal - Agra
-  3: { lat: 25.3176, lng: 82.9739, country: "IN" }, // Varanasi - Sacred River
-  4: { lat: 34.0479, lng: 74.4049, country: "IN" }, // Kashmir - Paradise on Earth
-  5: { lat: 13.0827, lng: 80.2707, country: "IN" }, // Chennai - Detroit of India
-  6: { lat: 26.93377, lng: 75.9236, country: "IN" }, // LNMIIT Jaipur - Technical Institute
-  7: { lat: 22.5726, lng: 88.3639, country: "IN" }, // Kolkata - Cultural Capital
+// Updated destination coordinates matching our original plan
+1: { lat: 28.0026, lng: 86.8528, country: "NP" }, // Everest Base Camp, Sagarmatha
+2: { lat: 33.7898, lng: 76.8112, country: "IN" }, // Chadar Trek, Zanskar Valley  
+3: { lat: 30.7268, lng: 79.6081, country: "IN" }, // Hemkund Sahib & Valley of Flowers
+4: { lat: 32.3059, lng: 78.0169, country: "IN" }, // Key Monastery, Spiti Valley
+5: { lat: 12.0067, lng: 92.9615, country: "IN" }, // Havelock Island Circuit
+6: { lat: 26.9157, lng: 70.9083, country: "IN" }, // Jaisalmer Fort & Sam Sand Dunes
+7: { lat: 15.4589, lng: 75.0078, country: "IN" }, // IIIT Dharwad Campus
+8: { lat: 26.9364, lng: 75.9238, country: "IN" }, // LNMIIT Jaipur Campus (corrected coordinates)
 };
 
 /**
