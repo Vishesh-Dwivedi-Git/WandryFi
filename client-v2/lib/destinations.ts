@@ -66,7 +66,7 @@ export const destinationsById: Record<
     id: "6",
     name: "LNMIIT Jaipur",
     image: "/placeholder.jpg",
-    coordinates: { lat: 26.9343, lng: 75.9231 }, // Correct LNMIIT coordinates
+    coordinates: { lat: 26.93377, lng: 75.9236 }, // Correct LNMIIT coordinates
     difficulty: "Easy",
     description: "Visit the prestigious LNMIIT campus in Jaipur",
     estimatedTime: "1 day",

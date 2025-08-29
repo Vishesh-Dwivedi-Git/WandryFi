@@ -18,6 +18,8 @@ import {
 import { useWanderfy } from "@/contexts/wanderify-context";
 import dynamic from "next/dynamic";
 import { Destination, destinations } from "@/lib/destinations";
+import { useAccount, useWriteContract } from "wagmi";
+import { useWanderifyContract } from "@/lib/contract";
 
 let L: any = null;
 
@@ -361,6 +363,9 @@ export default function NavigationView({
   onClose,
 }: NavigationViewProps) {
   const { completeQuest } = useWanderfy();
+  const { address } = useAccount();
+  const contract = useWanderifyContract();
+  const { writeContract } = useWriteContract();
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locationError, setLocationError] = useState<string>("");
   const [distanceToTarget, setDistanceToTarget] = useState<number>(Infinity);
@@ -448,19 +453,63 @@ export default function NavigationView({
 
   const handleCheckIn = async () => {
     if (distanceToTarget > 50) return;
+    if (!address) {
+      setLocationError("Please connect your wallet");
+      return;
+    }
+    if (!userLocation) {
+      setLocationError("GPS location not available");
+      return;
+    }
 
     setCheckingIn(true);
 
-    setTimeout(() => {
-      setIsCheckedIn(true);
+    try {
+      // Call backend verification service
+      const response = await fetch("http://localhost:3001/api/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "your-api-key-here", // Add your API key
+        },
+        body: JSON.stringify({
+          walletAddress: address,
+          destinationId: destination.id,
+          userLat: userLocation.lat,
+          userLon: userLocation.lng,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Verification failed");
+      }
+
+      const { signature } = await response.json();
+      console.log(signature);
+      // Call smart contract checkIn function with the signature
+      await writeContract({
+        ...contract,
+        functionName: "checkIn",
+        args: [signature],
+      });
+
+      // Complete the quest in the frontend
       completeQuest(destination.id);
 
+      setIsCheckedIn(true);
       setTimeout(() => {
         setCheckingIn(false);
         setIsCheckedIn(false);
         onClose();
       }, 3000);
-    }, 2000);
+    } catch (error) {
+      console.error("Check-in failed:", error);
+      setLocationError(
+        error instanceof Error ? error.message : "Check-in failed"
+      );
+      setCheckingIn(false);
+    }
   };
 
   const canCheckIn = distanceToTarget <= 50 && !checkingIn && !isCheckedIn;

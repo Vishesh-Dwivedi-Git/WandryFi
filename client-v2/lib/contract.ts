@@ -3,9 +3,10 @@ import { Address } from "viem";
 import WanderifyABI from "@/contracts/Wanderify.json";
 import { getContractAddress, getChainConfig } from "./chain-config";
 
-// Legacy export for backward compatibility
+// Legacy export for backward compatibility - now reads from env
 export const contractAddr =
-  "0x5fbdb2315678afecb367f032d93f642f64180aa3" as const;
+  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
+  ("0x5fbdb2315678afecb367f032d93f642f64180aa3" as const);
 
 // Dynamic contract configuration based on current chain
 export function getWanderifyContract(chainId?: number) {

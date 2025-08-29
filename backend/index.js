@@ -36,7 +36,7 @@ const destinations = {
   3: { lat: 25.3176, lng: 82.9739, country: "IN" }, // Varanasi - Sacred River
   4: { lat: 34.0479, lng: 74.4049, country: "IN" }, // Kashmir - Paradise on Earth
   5: { lat: 13.0827, lng: 80.2707, country: "IN" }, // Chennai - Detroit of India
-  6: { lat: 26.8393, lng: 75.562, country: "IN" }, // LNMIIT Jaipur - Technical Institute
+  6: { lat: 26.93377, lng: 75.9236, country: "IN" }, // LNMIIT Jaipur - Technical Institute
   7: { lat: 22.5726, lng: 88.3639, country: "IN" }, // Kolkata - Cultural Capital
 };
 
@@ -126,11 +126,14 @@ app.post("/api/verify", async (req, res) => {
       ["address", "uint256"],
       [walletAddress, destinationId]
     );
+    console.log(walletAddress, destinationId);
+    console.log("Message Hash:", messageHash);
 
     const signature = await verifierWallet.signMessage(
-      ethers.utils.arrayify(messageHash)
+      ethers.getBytes(messageHash)
     );
 
+    console.log("Generated Signature:", signature);
     // Send the signature back to the client
     res.status(200).json({ signature });
   } catch (error) {
@@ -140,6 +143,6 @@ app.post("/api/verify", async (req, res) => {
 });
 
 // Start the Express server
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+app.listen(3001, () => {
+  console.log("Server is running on port 3001");
 });

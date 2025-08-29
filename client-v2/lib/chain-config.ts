@@ -54,6 +54,13 @@ export function getChainConfig(chainId?: number): ChainConfig {
 }
 
 export function getContractAddress(chainId?: number): `0x${string}` {
+  // First check for environment variable
+  const envAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+  if (envAddress && envAddress.startsWith('0x')) {
+    return envAddress as `0x${string}`;
+  }
+
+  // Fallback to chain-specific config
   return getChainConfig(chainId).contractAddress;
 }
 
