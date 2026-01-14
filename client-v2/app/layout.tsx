@@ -2,7 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Press_Start_2P } from "next/font/google";
+import { Press_Start_2P, Playfair_Display } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -11,6 +11,12 @@ const pixelFont = Press_Start_2P({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-pixel",
+});
+
+const serifFont = Playfair_Display({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-serif",
 });
 
 export const metadata: Metadata = {
@@ -27,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} ${pixelFont.variable} antialiased`}
+        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} ${pixelFont.variable} ${serifFont.variable} antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

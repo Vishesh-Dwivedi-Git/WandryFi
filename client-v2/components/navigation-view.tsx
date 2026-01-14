@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useWanderfy } from "@/contexts/wanderify-context";
 import dynamic from "next/dynamic";
-import { Destination, destinations } from "@/lib/destinations";
+import { Destination, allDestinations as destinations } from "@/lib/destinations";
 import { useAccount, useWriteContract } from "wagmi";
 import { useWanderifyContract } from "@/lib/contract";
 
@@ -75,9 +75,9 @@ const calculateDistance = (
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) *
+    Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -93,11 +93,10 @@ const createUserIcon = (heading?: number): L.DivIcon | null => {
         <div class="absolute inset-0 w-12 h-12 bg-cyan-400 rounded-full animate-ping opacity-40"></div>
         
         <!-- Main avatar container -->
-        <div class="relative w-12 h-12 bg-cyan-400 rounded-full border-2 border-white shadow-lg flex items-center justify-center overflow-hidden" ${
-          heading !== undefined
-            ? `style="transform: rotate(${heading}deg)"`
-            : ""
-        }>
+        <div class="relative w-12 h-12 bg-cyan-400 rounded-full border-2 border-white shadow-lg flex items-center justify-center overflow-hidden" ${heading !== undefined
+        ? `style="transform: rotate(${heading}deg)"`
+        : ""
+      }>
           
           <!-- 3D Cartoon Avatar -->
           <div class="w-10 h-10 relative">
@@ -120,15 +119,14 @@ const createUserIcon = (heading?: number): L.DivIcon | null => {
           </div>
           
           <!-- Direction indicator -->
-          ${
-            heading !== undefined
-              ? `
+          ${heading !== undefined
+        ? `
             <div class="absolute -top-1 left-1/2 transform -translate-x-1/2">
               <div class="w-0 h-0 border-l-2 border-r-2 border-b-3 border-transparent border-b-yellow-400"></div>
             </div>
           `
-              : ""
-          }
+        : ""
+      }
         </div>
         
         <!-- Player label -->
@@ -391,6 +389,7 @@ export default function NavigationView({
             "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
         });
         // Import leaflet CSS dynamically
+        // @ts-ignore
         import("leaflet/dist/leaflet.css");
       });
     }
@@ -535,13 +534,13 @@ export default function NavigationView({
   return (
     <div className="fixed inset-0 z-50 bg-black font-mono">
       {/* Header - Fixed positioning */}
-      <div className="fixed top-0 left-0 right-0 z-30 bg-black border-b border-cyan-400 h-16">
-        <div className="flex items-center justify-between px-4 h-full">
-          <div className="flex items-center space-x-4">
-            <h1 className="font-bold text-xl text-cyan-400">
-              QUEST: {destination.name}
+      <div className="fixed top-0 left-0 right-0 z-30 bg-black/95 backdrop-blur-xl border-b border-cyan-400/50 h-14 sm:h-16">
+        <div className="flex items-center justify-between px-3 sm:px-4 h-full gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+            <h1 className="font-bold text-sm sm:text-xl text-cyan-400 truncate">
+              <span className="hidden sm:inline">QUEST: </span>{destination.name}
             </h1>
-            <Badge className="bg-orange-600 text-black font-bold px-3 py-1 text-xs">
+            <Badge className="bg-orange-600 text-black font-bold px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs shrink-0">
               {destination.difficulty.toUpperCase()}
             </Badge>
 
@@ -567,98 +566,102 @@ export default function NavigationView({
         </div>
       </div>
 
-      {/* Status Bar - Fixed positioning, no overlap */}
+      {/* Status Bar - Tactical HUD Style */}
       {userLocation && (
-        <div className="fixed top-16 left-0 right-0 z-20 bg-black border-b border-cyan-400 p-4">
+        <div className="fixed top-14 sm:top-16 left-2 right-2 sm:left-4 sm:right-4 z-20 pointer-events-none">
           <div
-            className={`rounded border ${
-              isInRange
-                ? "bg-green-900 border-green-500"
-                : isClose
-                ? "bg-orange-900 border-orange-500"
+            className={`pointer-events-auto rounded-lg sm:rounded-xl border backdrop-blur-xl ${isInRange
+              ? "bg-green-950/80 border-green-500/50"
+              : isClose
+                ? "bg-orange-950/80 border-orange-500/50"
                 : isNearby
-                ? "bg-blue-900 border-blue-500"
-                : "bg-red-900 border-red-500"
-            } p-4`}
+                  ? "bg-blue-950/80 border-blue-500/50"
+                  : "bg-red-950/80 border-red-500/50"
+              } p-3 sm:p-6 shadow-2xl transition-all duration-500 max-w-2xl mx-auto`}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-4">
                 <Target
-                  className={`w-6 h-6 ${
-                    isInRange
-                      ? "text-green-400"
-                      : isClose
+                  className={`w-8 h-8 ${isInRange
+                    ? "text-green-400 animate-pulse"
+                    : isClose
                       ? "text-orange-400"
                       : isNearby
-                      ? "text-blue-400"
-                      : "text-red-400"
-                  }`}
-                />
-                <div>
-                  <p
-                    className={`font-bold text-lg ${
-                      isInRange
-                        ? "text-green-400"
-                        : isClose
-                        ? "text-orange-400"
-                        : isNearby
                         ? "text-blue-400"
                         : "text-red-400"
                     }`}
+                />
+                <div>
+                  <p
+                    className={`font-mono font-bold text-xl sm:text-2xl tracking-widest ${isInRange
+                      ? "text-green-400"
+                      : isClose
+                        ? "text-orange-400"
+                        : isNearby
+                          ? "text-blue-400"
+                          : "text-red-400"
+                      }`}
                   >
                     {distanceToTarget < 1000
-                      ? `${Math.round(distanceToTarget)}m AWAY`
-                      : `${(distanceToTarget / 1000).toFixed(2)}km AWAY`}
+                      ? `${Math.round(distanceToTarget)}M`
+                      : `${(distanceToTarget / 1000).toFixed(2)}KM`}
                   </p>
-                  <p className="text-sm text-white font-bold">
+                  <p className="text-xs text-white/70 font-mono tracking-[0.2em] uppercase">
                     {isInRange
-                      ? "CHECK-IN AVAILABLE"
+                      ? "TARGET_ACQUIRED::CHECK_IN"
                       : isClose
-                      ? "ALMOST THERE"
-                      : isNearby
-                      ? "APPROACHING"
-                      : "NAVIGATE TO TARGET"}
+                        ? "PROXIMITY_ALERT::HIGH"
+                        : isNearby
+                          ? "SIGNAL_DETECTED::APPROACHING"
+                          : "SCANNING_SECTOR::NAVIGATE"}
                   </p>
                 </div>
               </div>
 
-              <div className="text-right">
-                <div className="bg-yellow-500 text-black px-3 py-1 rounded font-bold text-sm">
+              <div className="text-right bg-black/40 px-3 py-2 rounded border border-white/10">
+                <div className="text-yellow-500 font-mono font-bold text-lg">
                   +{destination.xpReward}XP
                 </div>
-                <p className="text-xs text-white mt-1 font-bold">REWARD</p>
+                <p className="text-[10px] text-white/50 tracking-widest uppercase">BOUNTY</p>
               </div>
             </div>
 
-            {/* Progress bar - contained within status bar */}
-            <div className="w-full bg-black rounded h-3 border border-cyan-400">
+            {/* Tactical Progress Bar */}
+            <div className="w-full bg-black/50 h-2 border border-white/10 relative overflow-hidden">
+              {/* Pattern Overlay */}
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNCIgaGVpZ2h0PSI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0wIDRoNHYxSDB6IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvc3ZnPg==')] opacity-30" />
+
               <div
-                className={`h-full rounded transition-all duration-500 ${
-                  isInRange
-                    ? "bg-green-500"
-                    : isClose
-                    ? "bg-orange-500"
+                className={`h-full transition-all duration-500 relative ${isInRange
+                  ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                  : isClose
+                    ? "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"
                     : isNearby
-                    ? "bg-blue-500"
-                    : "bg-red-500"
-                }`}
+                      ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                      : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+                  }`}
                 style={{
                   width: `${Math.max(
                     5,
                     Math.min(100, (1000 - distanceToTarget) / 10)
                   )}%`,
                 }}
-              ></div>
+              >
+                <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-white opacity-50" />
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Sidebar - Properly positioned */}
+      {/* Sidebar - Desktop only, bottom sheet on mobile */}
       <div
-        className={`fixed left-0 ${
-          userLocation ? "top-40" : "top-16"
-        } bottom-0 w-80 bg-black border-r border-cyan-400 overflow-y-auto z-10`}
+        className={`fixed z-10 bg-black/95 backdrop-blur-xl border-cyan-400/50 overflow-y-auto transition-all duration-300
+          /* Mobile: Bottom sheet */
+          left-0 right-0 bottom-0 h-auto max-h-[40vh] border-t rounded-t-2xl
+          /* Desktop: Sidebar */
+          lg:left-0 lg:right-auto lg:bottom-0 lg:h-auto lg:max-h-none lg:border-t-0 lg:border-r lg:rounded-none lg:w-80
+          ${userLocation ? "lg:top-[160px]" : "lg:top-16"}`}
       >
         <div className="p-4">
           <div className="mb-6">
@@ -763,11 +766,14 @@ export default function NavigationView({
         </div>
       </div>
 
-      {/* Normal Map with Dark Theme - Properly positioned */}
+      {/* Normal Map with Dark Theme - Responsive positioning */}
       <div
-        className={`fixed left-80 ${
-          userLocation ? "top-40" : "top-16"
-        } right-0 bottom-0`}
+        className={`fixed inset-0
+          /* Mobile: full screen map with space for bottom sheet */
+          top-16 bottom-[40vh]
+          /* Desktop: next to sidebar */
+          lg:left-80 lg:bottom-0
+          ${userLocation ? "lg:top-[160px]" : "lg:top-16"}`}
       >
         {userLocation ? (
           <MapContainer

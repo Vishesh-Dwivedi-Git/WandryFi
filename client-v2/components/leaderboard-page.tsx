@@ -41,19 +41,12 @@ export default function LeaderboardPage() {
       profits: bigint[];
     }
 
-    interface ProcessedLeaderboardPlayer {
-      rank: number;
-      address: `0x${string}`;
-      score: number;
-      badge: string;
-    }
-
     return (users as RawLeaderboardResult["users"])
       .map(
         (
           userAddress: `0x${string}`,
           index: number
-        ): ProcessedLeaderboardPlayer => ({
+        ): LeaderboardPlayer => ({
           rank: index + 1,
           address: userAddress,
           score: parseFloat(formatEther(profits[index] as bigint)),
@@ -61,86 +54,105 @@ export default function LeaderboardPage() {
         })
       )
       .sort(
-        (a: ProcessedLeaderboardPlayer, b: ProcessedLeaderboardPlayer) =>
+        (a: LeaderboardPlayer, b: LeaderboardPlayer) =>
           b.score - a.score
       );
   }, [leaderboardResult]);
 
   // 3. Find the current user's data within the processed leaderboard.
-  const currentUserData = useMemo(() => {
+  const currentUserData = useMemo((): LeaderboardPlayer | null => {
     if (!connectedAddress || !processedLeaderboardData.length) {
       return null;
     }
     // Find the player entry that matches the connected wallet address
-    return processedLeaderboardData.find(
+    const found = processedLeaderboardData.find(
       (player) =>
         player.address.toLowerCase() === connectedAddress.toLowerCase()
     );
+    return found || null;
   }, [connectedAddress, processedLeaderboardData]);
 
   // Helper component for rendering a player row to avoid repetition
   const PlayerRow = ({ player }: { player: LeaderboardPlayer }) => (
-    <div className="grid grid-cols-4 gap-4 items-center">
-      <div className="font-pixel text-lg">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 items-center">
+      <div className="font-pixel text-base sm:text-lg">
         <span
           className={player.rank <= 3 ? "text-neon-gold" : "text-foreground"}
         >
           #{player.rank}
         </span>
+        {/* Show badge inline on mobile */}
+        <span className="sm:hidden ml-2 text-xl">{player.badge}</span>
       </div>
-      <div className="font-mono text-sm text-muted-foreground truncate">
+      <div className="hidden sm:block font-mono text-sm text-muted-foreground truncate">
         {player.address}
       </div>
-      <div className="font-pixel text-neon-cyan">
-        {player.score.toLocaleString()} WNDR
+      <div className="font-pixel text-neon-cyan text-sm sm:text-base">
+        {player.score.toLocaleString()} <span className="hidden sm:inline">WNDR</span>
       </div>
-      <div className="text-2xl">{player.badge}</div>
+      <div className="hidden sm:block text-2xl">{player.badge}</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="font-pixel text-3xl text-neon-cyan mb-8 text-center">
-          Leaderboard
-        </h1>
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="bg-muted/50 px-6 py-4 border-b border-border">
-            <div className="grid grid-cols-4 gap-4 font-pixel text-sm text-muted-foreground">
-              <div>Rank</div>
-              <div>Explorer</div>
-              <div>Score</div>
-              <div>Badge</div>
+    <div className="w-full">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <div className="flex flex-col">
+            <h1 className="font-serif text-2xl sm:text-4xl text-white tracking-tight">
+              Global Ranking
+            </h1>
+            <div className="text-neon-cyan font-mono text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.3em] opacity-70 mt-1">
+              LIVE_DATA_FEED::ACTIVE
+            </div>
+          </div>
+          <div className="hidden sm:block">
+            <div className="flex gap-1">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="w-2 h-2 bg-neon-cyan rounded-full animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
+          {/* Deco Lines */}
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-neon-cyan/50 to-transparent opacity-50" />
+
+          <div className="bg-white/5 px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 font-mono text-[10px] sm:text-xs text-neon-cyan tracking-widest uppercase">
+              <div>// Rank</div>
+              <div className="hidden sm:block">// Explorer</div>
+              <div>// Score</div>
+              <div className="hidden sm:block">// Badge</div>
             </div>
           </div>
 
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-white/5">
             {isLoading
-              ? // 4. Show a loading skeleton while data is being fetched
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="px-6 py-4">
-                    <div className="grid grid-cols-4 gap-4 items-center">
-                      <Skeleton className="h-6 w-10" />
-                      <Skeleton className="h-6 w-32" />
-                      <Skeleton className="h-6 w-24" />
-                      <Skeleton className="h-6 w-8" />
-                    </div>
+              ? Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="px-4 sm:px-6 py-4 sm:py-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 items-center">
+                    <Skeleton className="h-5 sm:h-6 w-10 bg-white/10" />
+                    <Skeleton className="hidden sm:block h-6 w-32 bg-white/10" />
+                    <Skeleton className="h-5 sm:h-6 w-16 sm:w-24 bg-white/10" />
+                    <Skeleton className="hidden sm:block h-6 w-8 bg-white/10" />
                   </div>
-                ))
-              : // 5. Map over the PROCESSED data, not the hardcoded array
-                processedLeaderboardData.map((player) => (
-                  <div
-                    key={player.address}
-                    className="px-6 py-4 hover:bg-muted/30 transition-colors duration-200"
-                  >
-                    <PlayerRow player={player} />
-                  </div>
-                ))}
+                </div>
+              ))
+              : processedLeaderboardData.map((player) => (
+                <div
+                  key={player.address}
+                  className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-white/5 transition-colors duration-200 group"
+                >
+                  <PlayerRow player={player} />
+                </div>
+              ))}
           </div>
 
-          {/* 6. Display the current user's rank at the bottom if they are connected and in the list */}
           {connectedAddress && currentUserData && (
-            <div className="px-6 py-4 bg-neon-cyan/10 border-t-2 border-neon-cyan">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 bg-neon-cyan/10 border-t border-neon-cyan/30 relative">
+              <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-neon-cyan" />
               <PlayerRow player={currentUserData} />
             </div>
           )}

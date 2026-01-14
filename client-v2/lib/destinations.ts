@@ -1,17 +1,17 @@
 // Static destination data with coordinates
-export const destinationsById: Record<
-  string,
-  {
-    id: string;
-    name: string;
-    image: string;
-    coordinates: { lat: number; lng: number };
-    difficulty: "Easy" | "Medium" | "Hard";
-    description: string;
-    estimatedTime?: string;
-    tags?: string[];
-  }
-> = {
+export interface Destination {
+  id: string;
+  name: string;
+  image: string;
+  coordinates: { lat: number; lng: number };
+  difficulty: "Easy" | "Medium" | "Hard";
+  description: string;
+  estimatedTime?: string;
+  tags?: string[];
+  xpReward?: number; // Added xpReward to match usage in components
+}
+
+export const destinationsById: Record<string, Destination> = {
   "1": {
     id: "1",
     name: "Crystal Cave",

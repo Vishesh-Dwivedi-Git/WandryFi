@@ -15,10 +15,29 @@ export default function ConnectWalletButton() {
   if (!isConnected) {
     const injected =
       connectors.find((c) => c.id === "injected") || connectors[0];
+
+    const handleConnect = async () => {
+      try {
+        await connect({ connector: injected });
+      } catch (error: unknown) {
+        // Silently handle user rejection - this is expected behavior
+        if (
+          error instanceof Error &&
+          (error.message.includes("rejected") ||
+            error.message.includes("denied") ||
+            error.message.includes("User rejected"))
+        ) {
+          return; // User rejected, do nothing
+        }
+        // Re-throw unexpected errors
+        throw error;
+      }
+    };
+
     return (
       <button
         className="font-pixel text-base px-6 py-2 bg-neon-cyan text-background hover:bg-neon-cyan/90 border-2 border-neon-cyan glow-cyan hover:glow-cyan transition-all duration-300 transform hover:scale-105 rounded-md"
-        onClick={() => connect({ connector: injected })}
+        onClick={handleConnect}
         disabled={isPending}
       >
         {isPending ? "Connecting…" : "Connect Wallet"}
