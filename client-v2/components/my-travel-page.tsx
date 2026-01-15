@@ -26,6 +26,7 @@ interface Destination {
 }
 
 const MIN_STAKE_DURATION_SECS = 15 * 24 * 60 * 60; // must match MIN_STAKE_DURATION
+const CLAIM_WINDOW_SECS = 24 * 60 * 60; // 1 day claim window after travel date
 
 const getRarityColor = (rarity: string) => {
   switch (rarity) {
@@ -287,8 +288,8 @@ const TrophyCard = ({ tokenId }: { tokenId: bigint }) => {
       typeof rawCompletion === "bigint"
         ? rawCompletion
         : rawCompletion != null
-        ? BigInt(rawCompletion)
-        : undefined;
+          ? BigInt(rawCompletion)
+          : undefined;
     if (!destinationName || completionDate == null) return undefined;
     return { destinationName, completionDate } as {
       destinationName: string;
@@ -418,12 +419,12 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
   const commitment =
     commitmentData && Array.isArray(commitmentData)
       ? {
-          user: commitmentData[0] as string,
-          amountInPool: commitmentData[1] as bigint,
-          travelDate: commitmentData[2] as bigint,
-          destinationId: commitmentData[3] as bigint,
-          isProcessed: commitmentData[4] as boolean,
-        }
+        user: commitmentData[0] as string,
+        amountInPool: commitmentData[1] as bigint,
+        travelDate: commitmentData[2] as bigint,
+        destinationId: commitmentData[3] as bigint,
+        isProcessed: commitmentData[4] as boolean,
+      }
       : undefined;
 
   // On-chain destination name and metadata for the active commitment
@@ -483,32 +484,56 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
 
   const activeQuest = (() => {
     try {
-      return commitment &&
-        commitment.user !== "0x0000000000000000000000000000000000000000" &&
-        !commitment.isProcessed
-        ? {
-            id: commitment.destinationId?.toString() || "0",
-            destinationName:
-              destinationNameOnchain ||
-              (commitment.destinationId
-                ? destinationsById[commitment.destinationId.toString()]?.name
-                : undefined) ||
-              "Unknown Quest",
-            stakeAmount: parseFloat(formatEther(commitment.amountInPool)),
-            travelDate: Number(commitment.travelDate),
-            image:
-              activeDestMetadata?.image ||
-              (commitment.destinationId
-                ? destinationsById[commitment.destinationId.toString()]?.image
-                : undefined) ||
-              "/placeholder.svg",
-            status:
-              Date.now() / 1000 >= Number(commitment.travelDate)
-                ? "ready-for-checkin"
-                : "in-progress",
-            timeRemaining: timeRemainingPct,
-          }
-        : null;
+      if (!commitment ||
+        commitment.user === "0x0000000000000000000000000000000000000000" ||
+        commitment.isProcessed) {
+        return null;
+      }
+
+      // Get destination data for fallback
+      const destId = commitment.destinationId?.toString() || "0";
+      const destinationData = destinationsById[destId];
+
+      // Handle image - could be from IPFS metadata, static import, or fallback
+      let questImage: string = "/placeholder.svg";
+      if (activeDestMetadata?.image) {
+        questImage = activeDestMetadata.image;
+      } else if (destinationData?.image) {
+        // Handle StaticImageData from Next.js imports
+        questImage = typeof destinationData.image === "string"
+          ? destinationData.image
+          : destinationData.image.src;
+      }
+
+      // Calculate time remaining breakdown
+      const travelDateTs = Number(commitment.travelDate);
+      const nowTs = Math.floor(Date.now() / 1000);
+      const secsRemaining = Math.max(0, travelDateTs - nowTs);
+
+      const days = Math.floor(secsRemaining / 86400);
+      const hours = Math.floor((secsRemaining % 86400) / 3600);
+      const minutes = Math.floor((secsRemaining % 3600) / 60);
+
+      return {
+        id: destId,
+        destinationName:
+          destinationNameOnchain ||
+          destinationData?.name ||
+          "Unknown Quest",
+        stakeAmount: parseFloat(formatEther(commitment.amountInPool)),
+        travelDate: travelDateTs,
+        image: questImage,
+        status:
+          nowTs >= travelDateTs && nowTs <= travelDateTs + CLAIM_WINDOW_SECS
+            ? "ready-for-checkin"
+            : nowTs > travelDateTs + CLAIM_WINDOW_SECS
+              ? "claim-expired"
+              : "in-progress",
+        timeRemaining: timeRemainingPct,
+        daysRemaining: days,
+        hoursRemaining: hours,
+        minutesRemaining: minutes,
+      };
     } catch (error) {
       console.error("Error creating active quest:", error);
       return null;
@@ -517,9 +542,9 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
 
   const trophies = Array.isArray(tokenIds)
     ? tokenIds.filter(
-        (tokenId): tokenId is bigint =>
-          tokenId !== undefined && tokenId !== null
-      )
+      (tokenId): tokenId is bigint =>
+        tokenId !== undefined && tokenId !== null
+    )
     : [];
 
   return (
@@ -589,6 +614,23 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
                           className="w-full h-32 object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
+                        {/* Status Badge */}
+                        <div className="absolute top-2 right-2">
+                          <span className={cn(
+                            "px-2 py-1 rounded text-xs font-pixel",
+                            quest.status === "ready-for-checkin"
+                              ? "bg-green-500 text-white"
+                              : quest.status === "claim-expired"
+                                ? "bg-red-500 text-white"
+                                : "bg-neon-cyan/80 text-background"
+                          )}>
+                            {quest.status === "ready-for-checkin"
+                              ? "Ready to Claim!"
+                              : quest.status === "claim-expired"
+                                ? "Expired"
+                                : "In Progress"}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Content */}
@@ -604,79 +646,96 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
                               Staked:
                             </span>
                             <span className="font-pixel text-neon-gold">
-                              {quest.stakeAmount} WNDR
+                              {quest.stakeAmount.toFixed(4)} TMON
                             </span>
                           </div>
 
-                          {/* Progress Bar */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">
-                                Time Remaining:
-                              </span>
-                              <span className="text-sm text-foreground">
-                                {quest.timeRemaining}%
-                              </span>
-                            </div>
-                            <Progress
-                              value={quest.timeRemaining}
-                              className="h-2"
-                            />
+                          {/* Time Display */}
+                          <div className="bg-muted/30 rounded-lg p-4">
+                            {quest.status === "ready-for-checkin" ? (
+                              <div className="text-center">
+                                <p className="text-green-400 font-pixel text-sm mb-1">🎉 Claim Period Active!</p>
+                                <p className="text-xs text-muted-foreground">
+                                  You can claim on Travel Date or up to 1 day after.
+                                </p>
+                              </div>
+                            ) : quest.status === "claim-expired" ? (
+                              <div className="text-center">
+                                <p className="text-red-400 font-pixel text-sm mb-1">⏰ Claim Window Expired</p>
+                                <p className="text-xs text-muted-foreground">
+                                  The 1-day claim window has passed. Your stake may be forfeited.
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground mb-2">Time until claim opens:</p>
+                                <div className="flex justify-center gap-3">
+                                  <div className="text-center">
+                                    <div className="font-pixel text-xl text-neon-cyan">{quest.daysRemaining}</div>
+                                    <div className="text-xs text-muted-foreground">Days</div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="font-pixel text-xl text-neon-cyan">{quest.hoursRemaining}</div>
+                                    <div className="text-xs text-muted-foreground">Hours</div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="font-pixel text-xl text-neon-cyan">{quest.minutesRemaining}</div>
+                                    <div className="text-xs text-muted-foreground">Mins</div>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  Travel Date: {new Date(quest.travelDate * 1000).toLocaleDateString()}
+                                </p>
+                              </div>
+                            )}
                           </div>
 
-                          {/* Action Button */}
-                          <Button
-                            onClick={() => {
-                              // Get correct coordinates from destinations data
-                              const destinationData =
-                                destinationsById[quest.id];
-                              const correctCoordinates =
-                                destinationData?.coordinates || {
-                                  lat: 0,
-                                  lng: 0, // Fallback to {0,0} for unknown destinations
-                                };
+                          {/* Action Buttons */}
+                          <div className="space-y-2">
+                            {quest.status === "ready-for-checkin" ? (
+                              <Button
+                                onClick={() => {
+                                  const destinationData = destinationsById[quest.id];
+                                  const correctCoordinates = destinationData?.coordinates || { lat: 0, lng: 0 };
 
-                              console.log("=== MY TRAVEL PAGE DEBUG ===");
-                              console.log("Quest ID:", quest.id);
-                              console.log("Destination Data:", destinationData);
-                              console.log(
-                                "Correct Coordinates:",
-                                correctCoordinates
-                              );
-                              console.log("=============================");
-
-                              onNavigationView(true, {
-                                id: quest.id,
-                                name: quest.destinationName,
-                                image: quest.image,
-                                rewardPool: 0, // We'll get this from contract
-                                difficulty:
-                                  destinationData?.difficulty || "Medium",
-                                description:
-                                  destinationData?.description ||
-                                  `Active quest to ${quest.destinationName}`,
-                                coordinates: correctCoordinates, // ✅ Use correct coordinates
-                                participants: 1,
-                                estimatedTime:
-                                  destinationData?.estimatedTime || "15 days",
-                                tags: destinationData?.tags || [
-                                  "Active",
-                                  "Quest",
-                                ],
-                              });
-                            }}
-                            disabled={quest.status !== "ready-for-checkin"}
-                            className={cn(
-                              "w-full font-pixel py-3",
-                              quest.status === "ready-for-checkin"
-                                ? "bg-neon-magenta text-background hover:bg-neon-magenta/90 glow-magenta"
-                                : "bg-muted text-muted-foreground cursor-not-allowed"
+                                  onNavigationView(true, {
+                                    id: quest.id,
+                                    name: quest.destinationName,
+                                    image: quest.image,
+                                    rewardPool: 0,
+                                    difficulty: destinationData?.difficulty || "Medium",
+                                    description: destinationData?.description || `Claim rewards for ${quest.destinationName}`,
+                                    coordinates: correctCoordinates,
+                                    participants: 1,
+                                    estimatedTime: destinationData?.estimatedTime || "15 days",
+                                    tags: destinationData?.tags || ["Active", "Quest"],
+                                  });
+                                }}
+                                className="w-full font-pixel py-3 bg-green-500 text-white hover:bg-green-600"
+                              >
+                                🗺️ Navigate & Claim Rewards
+                              </Button>
+                            ) : quest.status === "claim-expired" ? (
+                              <Button
+                                disabled
+                                className="w-full font-pixel py-3 bg-red-500/20 text-red-400 cursor-not-allowed border border-red-500/30"
+                              >
+                                ❌ Claim Window Expired
+                              </Button>
+                            ) : (
+                              <Button
+                                disabled
+                                className="w-full font-pixel py-3 bg-muted text-muted-foreground cursor-not-allowed"
+                              >
+                                ⏳ Waiting for Claim Period
+                              </Button>
                             )}
-                          >
-                            {quest.status === "ready-for-checkin"
-                              ? "Begin Final Approach"
-                              : "Quest in Progress"}
-                          </Button>
+                          </div>
+
+                          {/* Info Note */}
+                          <p className="text-xs text-muted-foreground text-center">
+                            💡 Stake at least 15 days before your travel date
+                          </p>
                         </div>
                       </div>
                     </CardContent>

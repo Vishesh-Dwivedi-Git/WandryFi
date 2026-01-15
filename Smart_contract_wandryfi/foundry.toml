@@ -1,0 +1,26 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+cbor_metadata = true
+bytecode_hash = "none"  # disable ipfs
+optimizer = true
+optimizer_runs = 10000
+# # Monad Configuration
+# eth-rpc-url="https://testnet-rpc.monad.xyz"
+# chain_id = 10143
+chain_id = 31337
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+remappings = [
+  "@openzeppelin/=lib/openzeppelin-contracts/"
+]
+
+[lint]
+# Allow these lint rules - they are either false positives or acceptable patterns
+asm_keccak256 = "allow"           # Optional gas optimization, current code is readable
+mixed_case_variable = "allow"     # NFT is an acronym, journeyNFTs is correct
+mixed_case_function = "allow"     # NFT functions are correctly named
+pascal_case_struct = "allow"      # JourneyNFT follows convention (NFT is acronym)
+unaliased_plain_import = "allow"  # OpenZeppelin imports are standard
+unused_import = "allow"           # Console may be needed for debugging

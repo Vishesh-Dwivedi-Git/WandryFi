@@ -2,6 +2,20 @@
 
 import { useState } from "react";
 import Navbar from "@/components/navbar";
+
+// Local Destination interface matching navigation-view.tsx and my-travel-page.tsx
+interface Destination {
+  id: string;
+  name: string;
+  image: string;
+  rewardPool: number;
+  difficulty: "Easy" | "Medium" | "Hard";
+  description: string;
+  coordinates: { lat: number; lng: number };
+  participants?: number;
+  estimatedTime?: string;
+  tags?: string[];
+}
 import ExplorePage from "@/components/explore-page";
 import LeaderboardPage from "@/components/leaderboard-page";
 import MyTravelPage from "@/components/my-travel-page";

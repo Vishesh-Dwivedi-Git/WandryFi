@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import StakingModal from "@/components/staking-modal";
 import Image from "next/image";
-import { MapPin, Trophy, Users, Clock } from "lucide-react";
+import { MapPin, Trophy, Users } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useAccount, useReadContract } from "wagmi";
 import { useWanderifyContract } from "@/lib/contract";
@@ -19,8 +19,8 @@ let L: any = null;
 
 // Dynamic imports for react-leaflet components - with proper loading states
 const MapContainer = dynamic(
-  () => import("react-leaflet").then(mod => mod.MapContainer), 
-  { 
+  () => import("react-leaflet").then(mod => mod.MapContainer),
+  {
     ssr: false,
     loading: () => <div className="h-full flex items-center justify-center text-cyan-400">Loading map...</div>
   }
@@ -32,13 +32,13 @@ const Popup = dynamic(() => import("react-leaflet").then(mod => mod.Popup), { ss
 // Custom icon creation function
 const createCustomIcon = (difficulty: string, isStaked = false, isActive = false): L.DivIcon | null => {
   if (typeof window === "undefined" || !L) return null;
-  
+
   const colors: Record<string, string> = {
     Easy: "#00D4FF",
-    Medium: "#FF9500", 
+    Medium: "#FF9500",
     Hard: "#FF4D94"
   };
-  
+
   const color = colors[difficulty] || "#00D4FF";
   const size = isActive ? 40 : isStaked ? 36 : 32;
 
@@ -48,12 +48,12 @@ const createCustomIcon = (difficulty: string, isStaked = false, isActive = false
         <div class="relative rounded-full border-2 border-white flex items-center justify-center" 
              style="background-color: ${isStaked ? "#666666" : color}; width: ${size}px; height: ${size}px;">
           <svg viewBox="0 0 24 24" class="text-white" fill="currentColor" style="width: ${size * 0.4}px; height: ${size * 0.4}px;">
-            ${isActive 
-              ? '<path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>'
-              : isStaked
-                ? '<path d="M9 12L11 14L15 10M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z"/>'
-                : '<path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>'
-            }
+            ${isActive
+        ? '<path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>'
+        : isStaked
+          ? '<path d="M9 12L11 14L15 10M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z"/>'
+          : '<path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>'
+      }
           </svg>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function ExplorePage() {
     id: id.toString(),
     name: useReadContract({
       ...contract,
-      functionName: "destinationNames", 
+      functionName: "destinationNames",
       args: [BigInt(id)],
     }),
     pool: useReadContract({
@@ -161,7 +161,7 @@ export default function ExplorePage() {
     }),
     placeValue: useReadContract({
       ...contract,
-      functionName: "placeValues", 
+      functionName: "placeValues",
       args: [BigInt(id)],
     }),
   }));
@@ -169,7 +169,7 @@ export default function ExplorePage() {
   // Fix hydration by ensuring client-side only rendering
   useEffect(() => {
     setMounted(true);
-    
+
     // Load Leaflet CSS and JS only on client side
     if (typeof window !== "undefined") {
       // Load CSS via CDN to avoid hydration issues
@@ -178,7 +178,7 @@ export default function ExplorePage() {
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
       link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
       link.crossOrigin = '';
-      
+
       if (!document.querySelector('link[href*="leaflet.css"]')) {
         document.head.appendChild(link);
       }
@@ -198,7 +198,7 @@ export default function ExplorePage() {
       } else {
         setMapReady(true);
       }
-      
+
       return () => {
         if (document.head.contains(link)) {
           document.head.removeChild(link);
@@ -217,57 +217,76 @@ export default function ExplorePage() {
 
       for (let i = 0; i < destinationIds.length; i++) {
         const destId = destinationIds[i];
+        const staticData = destinationsById[destId.toString()];
+
+        if (!staticData) continue;
+
         const nameQuery = destinationQueries[i].name;
         const poolQuery = destinationQueries[i].pool;
 
-        if (nameQuery.isLoading || poolQuery.isLoading) {
-          continue;
-        }
+        // Use contract name if available, fallback to static data
+        const contractName = nameQuery.data as string;
+        const name = (contractName && contractName.trim() !== "")
+          ? contractName
+          : staticData.name;
 
-        const name = nameQuery.data as string;
+        // Use contract pool if available, fallback to 0
         const pool = poolQuery.data as bigint;
+        const poolAmount = pool || BigInt(0);
 
-        if (name && name.trim() !== "") {
-          const poolAmount = pool || BigInt(0);
-          const staticData = destinationsById[destId.toString()];
+        const destination: Destination = {
+          id: destId.toString(),
+          name,
+          description: staticData.description,
+          image: staticData.image,
+          coordinates: staticData.coordinates,
+          difficulty: staticData.difficulty as "Easy" | "Medium" | "Hard",
+          rewardPool: poolAmount ? parseFloat(formatEther(poolAmount)) : 0,
+          participants: Math.floor(Math.random() * 30) + 5,
+          estimatedTime: staticData.estimatedTime,
+          tags: staticData.tags,
+        };
 
-          if (staticData) {
-            const destination: Destination = {
-              id: destId.toString(),
-              name,
-              description: staticData.description,
-              image: staticData.image,
-              coordinates: staticData.coordinates,
-              difficulty: staticData.difficulty as "Easy" | "Medium" | "Hard",
-              rewardPool: poolAmount ? parseFloat(formatEther(poolAmount)) : 0,
-              participants: Math.floor(Math.random() * 30) + 5,
-              estimatedTime: staticData.estimatedTime,
-              tags: staticData.tags,
-            };
-            
-            destinationsData.push(destination);
-          }
-        }
+        destinationsData.push(destination);
       }
 
       setDestinations(destinationsData);
       setLoading(false);
     };
 
-    const allQueriesReady = destinationQueries.every(
+    // Check if queries are done loading (success or error)
+    const allQueriesSettled = destinationQueries.every(
       (queries) => !queries.name.isLoading && !queries.pool.isLoading
     );
 
-    if (allQueriesReady) {
+    // Also add a timeout fallback - if queries take too long, use static data
+    const timeoutId = setTimeout(() => {
+      if (loading && destinations.length === 0) {
+        console.log("Contract queries timed out, using static data");
+        const staticDestinations = Object.values(destinationsById).map(d => ({
+          ...d,
+          rewardPool: 0,
+          participants: Math.floor(Math.random() * 30) + 5,
+        }));
+        setDestinations(staticDestinations);
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
+    if (allQueriesSettled) {
       fetchDestinations();
     }
+
+    return () => clearTimeout(timeoutId);
   }, [
     mounted,
+    loading,
+    destinations.length,
     destinationQueries.map(q => `${q.name.isLoading}-${q.pool.isLoading}`).join(",")
   ]);
 
   // Process commitment data
-  const commitment = commitmentData as 
+  const commitment = commitmentData as
     | { destinationId: bigint; amountInPool: bigint; isProcessed: boolean }
     | undefined;
 
@@ -326,11 +345,10 @@ export default function ExplorePage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setFilterDifficulty(level)}
-                    className={`capitalize font-pixel ${
-                      filterDifficulty === level
-                        ? "bg-[#00D4FF] text-black hover:bg-[#00B7E6]"
-                        : "text-[#FFFFFF] hover:text-[#00D4FF] hover:bg-[#000000]"
-                    }`}
+                    className={`capitalize font-pixel ${filterDifficulty === level
+                      ? "bg-[#00D4FF] text-black hover:bg-[#00B7E6]"
+                      : "text-[#FFFFFF] hover:text-[#00D4FF] hover:bg-[#000000]"
+                      }`}
                   >
                     {level}
                   </Button>
@@ -374,13 +392,13 @@ export default function ExplorePage() {
 
         {/* Map View - Only render when fully ready to prevent hydration issues */}
         {viewMode === "map" && mapReady && (
-          <div 
+          <div
             className="relative bg-[#000000] border border-[#333333] rounded-lg overflow-hidden h-[650px]"
             style={{ zIndex: 1 }}
           >
-            <MapContainer 
-              center={mapCenter} 
-              zoom={5} 
+            <MapContainer
+              center={mapCenter}
+              zoom={5}
               style={{ height: "100%", width: "100%", zIndex: 1 }}
             >
               <MapStyle />
@@ -463,11 +481,10 @@ export default function ExplorePage() {
             {filteredDestinations.map((destination) => (
               <Card
                 key={destination.id}
-                className={`cursor-pointer transition-all duration-300 hover:scale-105 border-[#333333] bg-[#000000] ${
-                  isAnyQuestStaked && activeQuestId !== destination.id
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
+                className={`cursor-pointer transition-all duration-300 hover:scale-105 border-[#333333] bg-[#000000] ${isAnyQuestStaked && activeQuestId !== destination.id
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+                  }`}
                 onClick={() => {
                   if (!isAnyQuestStaked || activeQuestId === destination.id) {
                     setSelectedDestinationId(destination.id);
@@ -500,7 +517,7 @@ export default function ExplorePage() {
                   </div>
 
                   {/* Stats */}
-                  <div className="flex items-center justify-between text-sm mb-4">
+                  <div className="flex items-center justify-between text-sm mb-2">
                     <div className="flex items-center space-x-1">
                       <Trophy className="w-4 h-4 text-[#FF9500]" />
                       <span className="text-[#FF9500] font-bold font-pixel">{destination.rewardPool} TMON</span>
@@ -509,11 +526,12 @@ export default function ExplorePage() {
                       <Users className="w-4 h-4" />
                       <span className="font-pixel">{destination.participants}</span>
                     </div>
-                    <div className="flex items-center space-x-1 text-[#FFFFFF]">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-pixel">{destination.estimatedTime}</span>
-                    </div>
                   </div>
+
+                  {/* Staking Notice */}
+                  <p className="text-xs text-[#FF9500]/80 mb-4 text-center font-pixel">
+                    ⏰ Stake 15+ days before travel
+                  </p>
 
                   {/* Action Button */}
                   {activeQuestId === destination.id ? (
@@ -544,9 +562,9 @@ export default function ExplorePage() {
         {/* Fixed Modal with proper z-index positioning */}
         {selectedDestinationId && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            <div 
-              className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm" 
-              onClick={() => setSelectedDestinationId(null)} 
+            <div
+              className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm"
+              onClick={() => setSelectedDestinationId(null)}
             />
             <div className="relative z-[10000] max-w-lg w-full max-h-[90vh] overflow-y-auto">
               <StakingModal

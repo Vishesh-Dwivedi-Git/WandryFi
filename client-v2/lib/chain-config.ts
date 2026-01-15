@@ -7,42 +7,13 @@ export interface ChainConfig {
 }
 
 export const CHAIN_CONFIGS: Record<number, ChainConfig> = {
-  // Anvil Local Development
-  31337: {
-    chainId: 31337,
-    name: "Anvil Local",
-    contractAddress: "0x5fbdb2315678afecb367f032d93f642f64180aa3",
-    rpcUrl: "http://127.0.0.1:8545",
-  },
-  // Ethereum Mainnet
-  1: {
-    chainId: 1,
-    name: "Ethereum Mainnet",
-    contractAddress: "0x0000000000000000000000000000000000000000", // Replace with actual deployed address
-    blockExplorer: "https://etherscan.io",
-  },
-  // Sepolia Testnet
-  11155111: {
-    chainId: 11155111,
-    name: "Sepolia Testnet",
-    contractAddress: "0x0000000000000000000000000000000000000000", // Replace with actual deployed address
-    blockExplorer: "https://sepolia.etherscan.io",
-  },
   // Monad Testnet
   10143: {
     chainId: 10143,
     name: "Monad Testnet",
-    contractAddress: "0x0000000000000000000000000000000000000000", // Replace with actual deployed address
+    contractAddress: "0x022121411877937ac908A7E73B4F3115A0ACCE", // Replace with actual deployed address
     rpcUrl: "https://testnet-rpc.monad.xyz",
     blockExplorer: "https://testnet.monad.xyz",
-  },
-  // Monad Mainnet
-  20143: {
-    chainId: 20143,
-    name: "Monad Mainnet",
-    contractAddress: "0x0000000000000000000000000000000000000000", // Replace with actual deployed address
-    rpcUrl: "https://rpc.monad.xyz",
-    blockExplorer: "https://monad.xyz",
   },
 };
 

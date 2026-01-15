@@ -48,8 +48,11 @@ export default function StakingModal({
     },
   });
 
+  // Get static destination data as fallback
+  const staticDestination = destinationsById[destinationId];
+
   // Fetch destination data from contract
-  const { data: destinationName } = useReadContract({
+  const { data: contractDestinationName, isLoading: isNameLoading } = useReadContract({
     ...contract,
     functionName: "destinationNames",
     args: [BigInt(destinationId)],
@@ -61,18 +64,23 @@ export default function StakingModal({
     args: [BigInt(destinationId)],
   });
 
+  // Use contract name if available, fallback to static data
+  const destinationName = (contractDestinationName && String(contractDestinationName).trim() !== "")
+    ? String(contractDestinationName)
+    : staticDestination?.name || "Unknown Destination";
+
   const commitmentData = commitment && Array.isArray(commitment)
     ? {
-        user: commitment[0] as string,
-        amountInPool: commitment[1] as bigint,
-        travelDate: commitment[2] as bigint,
-        destinationId: commitment[3] as bigint,
-        isProcessed: commitment[4] as boolean,
-      }
+      user: commitment[0] as string,
+      amountInPool: commitment[1] as bigint,
+      travelDate: commitment[2] as bigint,
+      destinationId: commitment[3] as bigint,
+      isProcessed: commitment[4] as boolean,
+    }
     : undefined;
 
-  const isAlreadyStaked = commitmentData && 
-    commitmentData.amountInPool > BigInt(0) && 
+  const isAlreadyStaked = commitmentData &&
+    commitmentData.amountInPool > BigInt(0) &&
     !commitmentData.isProcessed;
 
   const handleAcceptQuest = () => {
@@ -133,7 +141,8 @@ export default function StakingModal({
     }
   };
 
-  if (!destinationName) {
+  // Only show loading if we have no data at all (no static fallback and contract still loading)
+  if (!staticDestination && isNameLoading) {
     return (
       <div className="bg-[#000000] border border-[#333333] rounded-lg p-6 max-w-md mx-auto">
         <div className="text-[#00D4FF] font-pixel text-center">
@@ -163,7 +172,7 @@ export default function StakingModal({
         {/* Destination Info */}
         <div className="mb-6">
           <h3 className="font-pixel text-2xl text-[#FFFFFF] mb-4">
-            {destinationName as string}
+            {destinationName}
           </h3>
           <p className="text-[#FFFFFF] mb-4">
             Stake TMON to prove you will visit this destination and earn rewards upon completion.
@@ -197,6 +206,16 @@ export default function StakingModal({
               <div className="w-2 h-2 bg-[#00D4FF] rounded-full"></div>
               <span>Earn rewards based on destination difficulty</span>
             </div>
+          </div>
+
+          {/* Important Notice */}
+          <div className="mt-4 p-3 bg-[#FF9500]/10 border border-[#FF9500]/30 rounded-lg">
+            <p className="text-xs text-[#FF9500] font-pixel">
+              ⚠️ Important: Stake at least 15 days before your travel date!
+            </p>
+            <p className="text-xs text-[#FFFFFF]/70 mt-1">
+              You can claim on Travel Date or 1 day after max.
+            </p>
           </div>
         </div>
 
@@ -270,8 +289,9 @@ export default function StakingModal({
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-auto p-0 bg-[#000000] border-[#333333] shadow-lg"
+              className="w-auto p-0 bg-[#000000] border-[#333333] shadow-lg z-[10001]"
               align="start"
+              sideOffset={5}
             >
               <Calendar
                 mode="single"
@@ -316,8 +336,8 @@ export default function StakingModal({
           {isPending
             ? "Processing Transaction..."
             : isAlreadyStaked
-            ? "Already Staked on Another Quest"
-            : "Accept Quest & Stake TMON"}
+              ? "Already Staked on Another Quest"
+              : "Accept Quest & Stake TMON"}
         </Button>
 
         {/* Additional Info */}
