@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { JSX } from "react/jsx-runtime";
 import { useAccount, useReadContract } from "wagmi";
@@ -31,13 +30,13 @@ const CLAIM_WINDOW_SECS = 24 * 60 * 60; // 1 day claim window after travel date
 const getRarityColor = (rarity: string) => {
   switch (rarity) {
     case "common":
-      return "border-green-400 bg-green-400/10";
+      return "border-white/10 bg-white/5 text-gray-400";
     case "rare":
-      return "border-neon-gold bg-neon-gold/10";
+      return "border-white/20 bg-white/10 text-white";
     case "legendary":
-      return "border-neon-magenta bg-neon-magenta/10";
+      return "border-white/40 bg-white/20 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]";
     default:
-      return "border-border bg-muted/10";
+      return "border-white/5 bg-transparent text-gray-600";
   }
 };
 
@@ -365,26 +364,27 @@ const TrophyCard = ({ tokenId }: { tokenId: bigint }) => {
   return (
     <div
       className={cn(
-        "aspect-square rounded-lg border-2 p-4 flex flex-col items-center justify-center group hover:scale-105 transition-all duration-300",
+        "aspect-square border p-4 flex flex-col items-center justify-center group hover:border-white/50 transition-all duration-300 relative overflow-hidden",
         getRarityColor(rarity)
       )}
     >
-      <div className="w-12 h-12 mb-2">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="w-12 h-12 mb-4 relative z-10 opacity-80 group-hover:opacity-100 transition-opacity">
         {metadata?.image ? (
           <img
             src={metadata.image}
             alt={nftDetails.destinationName}
-            className="w-full h-full object-cover rounded-md"
+            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
           />
         ) : (
           getPixelIcon(icon)
         )}
       </div>
-      <div className="text-center">
-        <p className="font-pixel text-xs text-foreground mb-1 line-clamp-2">
+      <div className="text-center relative z-10">
+        <p className="font-bold text-[10px] uppercase tracking-widest mb-1 line-clamp-2">
           {nftDetails.destinationName}
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[9px] opacity-60 uppercase tracking-wider">
           {new Date(
             Number(nftDetails.completionDate) * 1000
           ).toLocaleDateString()}
@@ -548,41 +548,40 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
     : [];
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen p-6 font-mono text-[#E0E0E0]">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <h1 className="font-pixel text-3xl text-neon-cyan mb-8 text-center">
-          My Travel
-        </h1>
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-6 border-b border-white/10 space-y-4 md:space-y-0">
+          <div>
+            <h1 className="text-4xl font-bold text-white tracking-widest uppercase mb-2">My Travel [ LOGS ]</h1>
+            <p className="text-gray-500 text-xs tracking-wider">Manage your active quests and view your achievements.</p>
+          </div>
+        </div>
 
         {/* Tab Navigation */}
-        <div className="flex justify-center mb-8">
-          <div className="flex bg-muted rounded-lg p-1">
-            <Button
-              variant={activeTab === "active-quests" ? "default" : "ghost"}
-              onClick={() => setActiveTab("active-quests")}
-              className={cn(
-                "font-pixel text-sm px-6 py-2",
-                activeTab === "active-quests"
-                  ? "bg-neon-cyan text-background"
-                  : ""
-              )}
-            >
-              Active Quests
-            </Button>
-            <Button
-              variant={activeTab === "trophy-case" ? "default" : "ghost"}
-              onClick={() => setActiveTab("trophy-case")}
-              className={cn(
-                "font-pixel text-sm px-6 py-2",
-                activeTab === "trophy-case"
-                  ? "bg-neon-cyan text-background"
-                  : ""
-              )}
-            >
-              Trophy Case
-            </Button>
-          </div>
+        <div className="flex justify-start mb-8 space-x-6">
+          <button
+            onClick={() => setActiveTab("active-quests")}
+            className={cn(
+              "text-sm uppercase tracking-widest transition-colors",
+              activeTab === "active-quests"
+                ? "text-white font-bold border-b border-white pb-1"
+                : "text-gray-500 hover:text-gray-300"
+            )}
+          >
+            {activeTab === "active-quests" ? "[ ACTIVE QUESTS ]" : "ACTIVE QUESTS"}
+          </button>
+          <button
+            onClick={() => setActiveTab("trophy-case")}
+            className={cn(
+              "text-sm uppercase tracking-widest transition-colors",
+              activeTab === "trophy-case"
+                ? "text-white font-bold border-b border-white pb-1"
+                : "text-gray-500 hover:text-gray-300"
+            )}
+          >
+            {activeTab === "trophy-case" ? "[ TROPHY CASE ]" : "TROPHY CASE"}
+          </button>
         </div>
 
         {/* Active Quests Tab */}
@@ -603,29 +602,29 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
                 {[activeQuest].map((quest) => (
                   <Card
                     key={quest.id}
-                    className="bg-card border border-border hover:border-neon-cyan/50 transition-all duration-300"
+                    className="bg-white/5 border border-white/10 hover:border-white/30 transition-all duration-300 rounded-none"
                   >
                     <CardContent className="p-0">
                       {/* Image */}
-                      <div className="relative overflow-hidden rounded-t-lg">
+                      <div className="relative overflow-hidden h-48">
                         <img
                           src={quest.image || "/placeholder.svg"}
                           alt={quest.destinationName}
-                          className="w-full h-32 object-cover"
+                          className="w-full h-full object-cover grayscale opacity-80"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent"></div>
                         {/* Status Badge */}
-                        <div className="absolute top-2 right-2">
+                        <div className="absolute top-3 right-3">
                           <span className={cn(
-                            "px-2 py-1 rounded text-xs font-pixel",
+                            "px-3 py-1 text-[10px] font-bold tracking-widest uppercase border",
                             quest.status === "ready-for-checkin"
-                              ? "bg-green-500 text-white"
+                              ? "bg-green-500/20 text-green-400 border-green-500/50"
                               : quest.status === "claim-expired"
-                                ? "bg-red-500 text-white"
-                                : "bg-neon-cyan/80 text-background"
+                                ? "bg-red-500/20 text-red-400 border-red-500/50"
+                                : "bg-black/50 text-white border-white/20 backdrop-blur-sm"
                           )}>
                             {quest.status === "ready-for-checkin"
-                              ? "Ready to Claim!"
+                              ? "Ready to Claim"
                               : quest.status === "claim-expired"
                                 ? "Expired"
                                 : "In Progress"}
@@ -635,63 +634,63 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
 
                       {/* Content */}
                       <div className="p-6">
-                        <h3 className="font-pixel text-lg text-foreground mb-4">
+                        <h3 className="font-bold text-xl text-white mb-6 uppercase tracking-widest">
                           {quest.destinationName}
                         </h3>
 
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                           {/* Stake Amount */}
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">
-                              Staked:
+                          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                            <span className="text-xs text-gray-500 uppercase tracking-widest">
+                              Staked Amount
                             </span>
-                            <span className="font-pixel text-neon-gold">
-                              {quest.stakeAmount.toFixed(4)} TMON
+                            <span className="font-mono text-white font-bold">
+                              {quest.stakeAmount.toFixed(4)} <span className="text-xs text-gray-600">TMON</span>
                             </span>
                           </div>
 
                           {/* Time Display */}
-                          <div className="bg-muted/30 rounded-lg p-4">
+                          <div className="bg-white/5 border border-white/10 p-4">
                             {quest.status === "ready-for-checkin" ? (
                               <div className="text-center">
-                                <p className="text-green-400 font-pixel text-sm mb-1">🎉 Claim Period Active!</p>
-                                <p className="text-xs text-muted-foreground">
-                                  You can claim on Travel Date or up to 1 day after.
+                                <p className="text-green-400 font-bold text-sm mb-1 uppercase tracking-wider">Claim Period Active</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest max-w-[200px] mx-auto">
+                                  Window open for 24 hours
                                 </p>
                               </div>
                             ) : quest.status === "claim-expired" ? (
                               <div className="text-center">
-                                <p className="text-red-400 font-pixel text-sm mb-1">⏰ Claim Window Expired</p>
-                                <p className="text-xs text-muted-foreground">
-                                  The 1-day claim window has passed. Your stake may be forfeited.
+                                <p className="text-red-400 font-bold text-sm mb-1 uppercase tracking-wider">Window Expired</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest max-w-[200px] mx-auto">
+                                  Stake forfeited
                                 </p>
                               </div>
                             ) : (
                               <div className="text-center">
-                                <p className="text-xs text-muted-foreground mb-2">Time until claim opens:</p>
-                                <div className="flex justify-center gap-3">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Time until claim opens</p>
+                                <div className="flex justify-center gap-6">
                                   <div className="text-center">
-                                    <div className="font-pixel text-xl text-neon-cyan">{quest.daysRemaining}</div>
-                                    <div className="text-xs text-muted-foreground">Days</div>
+                                    <div className="font-mono text-2xl text-white font-bold">{quest.daysRemaining}</div>
+                                    <div className="text-[10px] text-gray-600 uppercase tracking-widest mt-1">Days</div>
                                   </div>
                                   <div className="text-center">
-                                    <div className="font-pixel text-xl text-neon-cyan">{quest.hoursRemaining}</div>
-                                    <div className="text-xs text-muted-foreground">Hours</div>
+                                    <div className="font-mono text-2xl text-white font-bold">{quest.hoursRemaining}</div>
+                                    <div className="text-[10px] text-gray-600 uppercase tracking-widest mt-1">Hours</div>
                                   </div>
                                   <div className="text-center">
-                                    <div className="font-pixel text-xl text-neon-cyan">{quest.minutesRemaining}</div>
-                                    <div className="text-xs text-muted-foreground">Mins</div>
+                                    <div className="font-mono text-2xl text-white font-bold">{quest.minutesRemaining}</div>
+                                    <div className="text-[10px] text-gray-600 uppercase tracking-widest mt-1">Mins</div>
                                   </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                  Travel Date: {new Date(quest.travelDate * 1000).toLocaleDateString()}
+                                <p className="text-[10px] text-gray-600 mt-4 uppercase tracking-widest border-t border-white/5 pt-2 inline-block px-4">
+                                  Target: {new Date(quest.travelDate * 1000).toLocaleDateString()}
                                 </p>
                               </div>
                             )}
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="space-y-2">
+                          <div className="space-y-2 pt-2">
                             {quest.status === "ready-for-checkin" ? (
                               <Button
                                 onClick={() => {
@@ -711,30 +710,30 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
                                     tags: destinationData?.tags || ["Active", "Quest"],
                                   });
                                 }}
-                                className="w-full font-pixel py-3 bg-green-500 text-white hover:bg-green-600"
+                                className="w-full py-6 bg-white text-black hover:bg-gray-200 font-bold tracking-widest uppercase rounded-none"
                               >
-                                🗺️ Navigate & Claim Rewards
+                                [ VERIFY LOCATION ]
                               </Button>
                             ) : quest.status === "claim-expired" ? (
                               <Button
                                 disabled
-                                className="w-full font-pixel py-3 bg-red-500/20 text-red-400 cursor-not-allowed border border-red-500/30"
+                                className="w-full py-6 bg-white/5 text-gray-600 border border-white/10 cursor-not-allowed font-bold tracking-widest uppercase rounded-none"
                               >
-                                ❌ Claim Window Expired
+                                EXPIRED
                               </Button>
                             ) : (
                               <Button
                                 disabled
-                                className="w-full font-pixel py-3 bg-muted text-muted-foreground cursor-not-allowed"
+                                className="w-full py-6 bg-white/5 text-gray-600 border border-white/10 cursor-not-allowed font-bold tracking-widest uppercase rounded-none"
                               >
-                                ⏳ Waiting for Claim Period
+                                PENDING APPROVAL
                               </Button>
                             )}
                           </div>
 
                           {/* Info Note */}
-                          <p className="text-xs text-muted-foreground text-center">
-                            💡 Stake at least 15 days before your travel date
+                          <p className="text-[10px] text-gray-600 text-center uppercase tracking-widest">
+                            // Stake verification protocol v2.0
                           </p>
                         </div>
                       </div>
@@ -751,12 +750,12 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
           <div className="space-y-6">
             {isLoadingTokenIds ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading trophies...</p>
+                <p className="text-gray-500 text-xs uppercase tracking-widest">Loading trophies...</p>
               </div>
             ) : trophies.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  No trophies earned yet. Complete quests to earn badges!
+              <div className="text-center py-12 border border-dashed border-white/10">
+                <p className="text-gray-500 text-xs uppercase tracking-widest">
+                  No trophies earned yet. Complete quests to earn badges.
                 </p>
               </div>
             ) : (
@@ -769,29 +768,29 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
 
             {/* Trophy Stats */}
             <div className="mt-8 grid grid-cols-3 gap-4">
-              <div className="bg-muted/50 rounded-lg p-4 text-center">
-                <div className="font-pixel text-2xl text-neon-cyan">
+              <div className="bg-white/5 border border-white/10 p-4 text-center">
+                <div className="font-mono text-2xl text-white font-bold mb-1">
                   {trophies.length}
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-[10px] text-gray-500 uppercase tracking-widest">
                   Total Badges
                 </div>
               </div>
-              <div className="bg-muted/50 rounded-lg p-4 text-center">
-                <div className="font-pixel text-2xl text-neon-gold">
+              <div className="bg-white/5 border border-white/10 p-4 text-center">
+                <div className="font-mono text-xl text-gray-300 font-bold mb-1">
                   {/* This would require fetching details for all NFTs, skipping for now for performance */}
                   0
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Rare+ Badges
+                <div className="text-[10px] text-gray-600 uppercase tracking-widest">
+                  Rare+
                 </div>
               </div>
-              <div className="bg-muted/50 rounded-lg p-4 text-center">
-                <div className="font-pixel text-2xl text-neon-magenta">
+              <div className="bg-white/5 border border-white/10 p-4 text-center">
+                <div className="font-mono text-xl text-gray-300 font-bold mb-1">
                   {/* This would require fetching details for all NFTs, skipping for now for performance */}
                   0
                 </div>
-                <div className="text-sm text-muted-foreground">Legendary</div>
+                <div className="text-[10px] text-gray-600 uppercase tracking-widest">Legendary</div>
               </div>
             </div>
           </div>

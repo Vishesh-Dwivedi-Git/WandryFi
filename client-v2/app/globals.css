@@ -4,87 +4,94 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* "Wealth Management" Light Mode */
+  --background: oklch(0.985 0.01 85);
+  /* Warm Cream/Eggshell */
+  --foreground: oklch(0.15 0.02 260);
+  /* Deep Charcoal */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.15 0.02 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.15 0.02 260);
+  --primary: oklch(0.15 0.02 260);
+  /* Charcoal Primary */
+  --primary-foreground: oklch(0.985 0.01 85);
+  --secondary: oklch(0.95 0.02 85);
+  /* Slightly darker cream */
+  --secondary-foreground: oklch(0.15 0.02 260);
+  --muted: oklch(0.95 0.02 85);
+  --muted-foreground: oklch(0.45 0.02 260);
+  --accent: oklch(0.92 0.03 85);
+  --accent-foreground: oklch(0.15 0.02 260);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.90 0.02 85);
+  --input: oklch(0.90 0.02 85);
+  --ring: oklch(0.15 0.02 260);
+  --chart-1: oklch(0.15 0.02 260);
+  --chart-2: oklch(0.45 0.02 260);
+  --chart-3: oklch(0.70 0.02 260);
+  --chart-4: oklch(0.85 0.02 260);
+  --chart-5: oklch(0.92 0.02 260);
+  --radius: 0rem;
+  /* Cleaner, sharper corners */
+  --sidebar: oklch(0.985 0.01 85);
+  --sidebar-foreground: oklch(0.15 0.02 260);
+  --sidebar-primary: oklch(0.15 0.02 260);
+  --sidebar-primary-foreground: oklch(0.985 0.01 85);
+  --sidebar-accent: oklch(0.95 0.02 85);
+  --sidebar-accent-foreground: oklch(0.15 0.02 260);
+  --sidebar-border: oklch(0.90 0.02 85);
+  --sidebar-ring: oklch(0.15 0.02 260);
 }
 
 .dark {
-  /* Updated dark theme colors for Arcane-Tech aesthetic */
-  --background: oklch(0.08 0 0); /* Darker background */
-  --foreground: oklch(0.95 0 0); /* Brighter text */
-  --card: oklch(0.12 0 0); /* Slightly lighter cards */
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.12 0 0);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.7 0.3 200); /* Electric cyan */
-  --primary-foreground: oklch(0.08 0 0);
-  --secondary: oklch(0.18 0 0);
-  --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.15 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.75 0.25 320); /* Magenta accent */
-  --accent-foreground: oklch(0.08 0 0);
+  /* "Wealth Management" Dark Mode - Deep Charcoal & Gold */
+  --background: oklch(0.12 0.02 260);
+  /* Rich Dark Charcoal */
+  --foreground: oklch(0.98 0.01 85);
+  /* Cream White */
+  --card: oklch(0.15 0.02 260);
+  --card-foreground: oklch(0.98 0.01 85);
+  --popover: oklch(0.15 0.02 260);
+  --popover-foreground: oklch(0.98 0.01 85);
+  --primary: oklch(0.98 0.01 85);
+  /* Cream Primary */
+  --primary-foreground: oklch(0.12 0.02 260);
+  --secondary: oklch(0.20 0.02 260);
+  --secondary-foreground: oklch(0.98 0.01 85);
+  --muted: oklch(0.20 0.02 260);
+  --muted-foreground: oklch(0.70 0.02 260);
+  --accent: oklch(0.25 0.02 260);
+  --accent-foreground: oklch(0.98 0.01 85);
   --destructive: oklch(0.6 0.25 25);
-  --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.2 0 0);
-  --input: oklch(0.15 0 0);
-  --ring: oklch(0.7 0.3 200); /* Cyan ring */
-  --chart-1: oklch(0.7 0.3 200);
-  --chart-2: oklch(0.75 0.25 320);
-  --chart-3: oklch(0.8 0.2 60); /* Gold */
-  --chart-4: oklch(0.6 0.2 280);
-  --chart-5: oklch(0.65 0.15 160);
-  --sidebar: oklch(0.1 0 0);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.7 0.3 200);
-  --sidebar-primary-foreground: oklch(0.08 0 0);
-  --sidebar-accent: oklch(0.15 0 0);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.2 0 0);
-  --sidebar-ring: oklch(0.7 0.3 200);
-
-  /* Adding custom neon colors for Wanderify */
-  --neon-cyan: oklch(0.7 0.3 200);
-  --neon-magenta: oklch(0.75 0.25 320);
-  --neon-gold: oklch(0.8 0.2 60);
+  --destructive-foreground: oklch(0.98 0.01 85);
+  --border: oklch(0.25 0.02 260);
+  --input: oklch(0.25 0.02 260);
+  --ring: oklch(0.8 0.1 70);
+  /* Subtle Gold Ring */
+  --chart-1: oklch(0.8 0.1 70);
+  /* Gold */
+  --chart-2: oklch(0.6 0.05 260);
+  --chart-3: oklch(0.5 0.05 260);
+  --chart-4: oklch(0.4 0.05 260);
+  --chart-5: oklch(0.3 0.05 260);
+  --sidebar: oklch(0.12 0.02 260);
+  --sidebar-foreground: oklch(0.98 0.01 85);
+  --sidebar-primary: oklch(0.8 0.1 70);
+  --sidebar-primary-foreground: oklch(0.12 0.02 260);
+  --sidebar-accent: oklch(0.20 0.02 260);
+  --sidebar-accent-foreground: oklch(0.98 0.01 85);
+  --sidebar-border: oklch(0.25 0.02 260);
+  --sidebar-ring: oklch(0.8 0.1 70);
 }
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  /* Adding pixel font variable */
-  --font-pixel: var(--font-pixel);
+  --font-serif: var(--font-serif);
+  /* Replaced Pixel with Serif */
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -121,99 +128,51 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-
-  /* Adding neon color utilities */
-  --color-neon-cyan: var(--neon-cyan);
-  --color-neon-magenta: var(--neon-magenta);
-  --color-neon-gold: var(--neon-gold);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
-/* Adding custom utility classes for Wanderify */
 @layer utilities {
-  .font-pixel {
-    font-family: var(--font-pixel);
+  .font-serif {
+    font-family: var(--font-serif);
   }
 
+  /* Retain but remap old neon classes to new aesthetic to prevent crashes */
   .text-neon-cyan {
-    color: var(--color-neon-cyan);
+    @apply text-foreground;
   }
 
   .text-neon-magenta {
-    color: var(--color-neon-magenta);
+    @apply text-foreground;
   }
 
   .text-neon-gold {
-    color: var(--color-neon-gold);
-  }
-
-  .border-neon-cyan {
-    border-color: var(--color-neon-cyan);
-  }
-
-  .border-neon-magenta {
-    border-color: var(--color-neon-magenta);
-  }
-
-  .border-neon-gold {
-    border-color: var(--color-neon-gold);
+    @apply text-primary;
   }
 
   .bg-neon-cyan {
-    background-color: var(--color-neon-cyan);
+    @apply bg-primary;
   }
 
   .bg-neon-magenta {
-    background-color: var(--color-neon-magenta);
+    @apply bg-secondary/20;
   }
 
   .bg-neon-gold {
-    background-color: var(--color-neon-gold);
+    @apply bg-accent;
   }
 
-  .glow-cyan {
-    box-shadow: 0 0 20px var(--color-neon-cyan);
-  }
-
-  .glow-magenta {
-    box-shadow: 0 0 20px var(--color-neon-magenta);
-  }
-
+  .glow-cyan,
+  .glow-magenta,
   .glow-gold {
-    box-shadow: 0 0 20px var(--color-neon-gold);
-  }
-
-  .animate-pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite alternate;
-  }
-
-  .animate-rotate-slow {
-    animation: rotate-slow 8s linear infinite;
-  }
-}
-
-@keyframes pulse-glow {
-  from {
-    box-shadow: 0 0 10px var(--color-neon-cyan);
-  }
-  to {
-    box-shadow: 0 0 30px var(--color-neon-cyan), 0 0 40px var(--color-neon-cyan);
-  }
-}
-
-@keyframes rotate-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
+    box-shadow: none;
   }
 }

@@ -48,9 +48,17 @@ export default function MainApp() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#050505] text-[#E0E0E0] font-sans selection:bg-white selection:text-black overflow-x-hidden relative">
+      {/* Background Grid - faint texture */}
+      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }}
+      />
+
       <Navbar currentPage={currentPage} onPageChange={setCurrentPage} />
-      <main className="pt-16">
+      <main className="pt-24 relative z-10 px-6 container mx-auto">
         {currentPage === "explore" && <ExplorePage />}
         {currentPage === "leaderboard" && <LeaderboardPage />}
         {currentPage === "my-travel" && (

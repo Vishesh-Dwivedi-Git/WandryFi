@@ -2,15 +2,14 @@ import type React from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Press_Start_2P } from "next/font/google";
+import { Playfair_Display } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const pixelFont = Press_Start_2P({
-  weight: "400",
+const serifFont = Playfair_Display({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-pixel",
+  variable: "--font-serif",
   preload: true,
 });
 
@@ -67,7 +66,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body
-        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} ${pixelFont.variable} antialiased`}
+        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} ${serifFont.variable} antialiased`}
         suppressHydrationWarning
       >
         <Providers>{children}</Providers>

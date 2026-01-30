@@ -21,8 +21,8 @@ let L: any = null;
 
 // Dynamic imports with proper loading states for hydration safety
 const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer), 
-  { 
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  {
     ssr: false,
     loading: () => <div className="h-full flex items-center justify-center text-cyan-400">Loading map...</div>
   }
@@ -64,9 +64,9 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) *
+    Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -76,10 +76,10 @@ const createUserIcon = (heading?: number): L.DivIcon | null => {
   if (typeof window === "undefined" || !L) return null;
 
   const rotationStyle = heading !== undefined ? `transform: rotate(${heading}deg);` : "";
-  const directionIndicator = heading !== undefined 
+  const directionIndicator = heading !== undefined
     ? `<div class="absolute -top-1 left-1/2 transform -translate-x-1/2">
          <div class="w-0 h-0 border-l-2 border-r-2 border-b-3 border-transparent border-b-yellow-400"></div>
-       </div>` 
+       </div>`
     : "";
 
   return L.divIcon({
@@ -253,12 +253,13 @@ function DarkMapStyle(): null {
     const style = document.createElement("style");
     style.textContent = `
       .leaflet-container {
-        background: #000000 !important;
+        background: #050505 !important;
         font-family: 'Courier New', monospace !important;
         z-index: 1 !important;
       }
       .leaflet-tile {
-        filter: brightness(0.6) contrast(1.2) !important;
+        filter: sepia(100%) hue-rotate(180deg) brightness(0.8) contrast(1.2) saturate(3) !important;
+        opacity: 0.8 !important;
       }
       .leaflet-control {
         background: #1a1a1a !important;
@@ -313,7 +314,7 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
   const { address } = useAccount();
   const contract = useWanderifyContract();
   const { writeContract } = useWriteContract();
-  
+
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locationError, setLocationError] = useState<string>("");
   const [distanceToTarget, setDistanceToTarget] = useState<number>(Infinity);
@@ -326,7 +327,7 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
   // Fix hydration by ensuring client-side only rendering
   useEffect(() => {
     setMounted(true);
-    
+
     // Load Leaflet CSS and JS only on client side
     if (typeof window !== "undefined") {
       // Load CSS via CDN to avoid hydration issues
@@ -335,7 +336,7 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
       link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
       link.crossOrigin = '';
-      
+
       if (!document.querySelector('link[href*="leaflet.css"]')) {
         document.head.appendChild(link);
       }
@@ -356,7 +357,7 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
       } else {
         setMapReady(true);
       }
-      
+
       return () => {
         if (document.head.contains(link)) {
           document.head.removeChild(link);
@@ -498,19 +499,19 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black font-mono">
+    <div className="fixed inset-0 z-50 bg-[#050505] font-mono text-[#E0E0E0]">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-30 bg-black border-b border-cyan-400 h-16">
+      <div className="fixed top-0 left-0 right-0 z-30 bg-[#050505] border-b border-white/10 h-16">
         <div className="flex items-center justify-between px-4 h-full">
           <div className="flex items-center space-x-4">
-            <h1 className="font-bold text-xl text-cyan-400">QUEST: {destination.name}</h1>
-            <Badge className="bg-orange-600 text-black font-bold px-3 py-1 text-xs">
+            <h1 className="font-bold text-xl text-white tracking-widest uppercase">QUEST: {destination.name}</h1>
+            <Badge className="bg-white text-black font-bold px-3 py-1 text-xs tracking-wider border-none">
               {destination.difficulty.toUpperCase()}
             </Badge>
             {userLocation && (
-              <div className="flex items-center space-x-2 text-xs bg-zinc-900 border border-cyan-400 rounded px-3 py-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-cyan-400 font-bold">GPS</span>
+              <div className="flex items-center space-x-2 text-xs bg-white/5 border border-white/10 rounded px-3 py-1">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-400 font-bold">GPS</span>
                 <span className="text-white">±{Math.round(userLocation.accuracy)}m</span>
               </div>
             )}
@@ -519,7 +520,7 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-cyan-400 hover:text-white hover:bg-zinc-900 border border-cyan-400 font-bold"
+            className="text-gray-500 hover:text-white hover:bg-white/5 border border-white/10"
           >
             <X className="w-5 h-5" />
           </Button>
@@ -528,55 +529,51 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
 
       {/* Status Bar */}
       {userLocation && (
-        <div className="fixed top-16 left-0 right-0 z-20 bg-black border-b border-cyan-400 p-4">
-          <div className={`rounded border p-4 ${
-            isInRange ? "bg-green-900 border-green-500" :
-            isClose ? "bg-orange-900 border-orange-500" :
-            isNearby ? "bg-blue-900 border-blue-500" :
-            "bg-red-900 border-red-500"
-          }`}>
+        <div className="fixed top-16 left-0 right-0 z-20 bg-[#050505]/90 border-b border-white/10 p-4 backdrop-blur-sm">
+          <div className={`rounded border p-4 transition-colors duration-500 ${isInRange ? "bg-green-500/10 border-green-500/50" :
+            isClose ? "bg-orange-500/10 border-orange-500/50" :
+              isNearby ? "bg-blue-500/10 border-blue-500/50" :
+                "bg-white/5 border-white/10"
+            }`}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
-                <Target className={`w-6 h-6 ${
-                  isInRange ? "text-green-400" :
-                  isClose ? "text-orange-400" :
-                  isNearby ? "text-blue-400" :
-                  "text-red-400"
-                }`} />
+                <Target className={`w-6 h-6 ${isInRange ? "text-green-500" :
+                  isClose ? "text-orange-500" :
+                    isNearby ? "text-blue-500" :
+                      "text-gray-500"
+                  }`} />
                 <div>
-                  <p className={`font-bold text-lg ${
-                    isInRange ? "text-green-400" :
-                    isClose ? "text-orange-400" :
-                    isNearby ? "text-blue-400" :
-                    "text-red-400"
-                  }`}>
+                  <p className={`font-bold text-lg tracking-widest ${isInRange ? "text-green-500" :
+                    isClose ? "text-orange-500" :
+                      isNearby ? "text-blue-500" :
+                        "text-white"
+                    }`}>
                     {distanceToTarget < 1000
-                      ? `${Math.round(distanceToTarget)}m AWAY`
-                      : `${(distanceToTarget / 1000).toFixed(2)}km AWAY`}
+                      ? `${Math.round(distanceToTarget)}m`
+                      : `${(distanceToTarget / 1000).toFixed(2)}km`}
                   </p>
-                  <p className="text-sm text-white font-bold">
+                  <p className="text-xs text-gray-400 font-bold tracking-widest uppercase">
                     {isInRange ? "CHECK-IN AVAILABLE" :
-                     isClose ? "ALMOST THERE" :
-                     isNearby ? "APPROACHING" :
-                     "NAVIGATE TO TARGET"}
+                      isClose ? "ALMOST THERE" :
+                        isNearby ? "APPROACHING" :
+                          "NAVIGATE TO TARGET"}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="bg-yellow-500 text-black px-3 py-1 rounded font-bold text-sm">
+                <div className="bg-white/10 text-white border border-white/20 px-3 py-1 font-bold text-sm tracking-widest">
                   +{destination.xpReward || 100}XP
                 </div>
-                <p className="text-xs text-white mt-1 font-bold">REWARD</p>
+                <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">REWARD</p>
               </div>
             </div>
-            <div className="w-full bg-black rounded h-3 border border-cyan-400">
+            <div className="w-full bg-white/5 h-1">
               <div
-                className={`h-full rounded transition-all duration-500 ${
-                  isInRange ? "bg-green-500" :
+                className={`h-full transition-all duration-500 ${isInRange ? "bg-green-500" :
                   isClose ? "bg-orange-500" :
-                  isNearby ? "bg-blue-500" :
-                  "bg-red-500"
-                }`}
+                    isNearby ? "bg-blue-500" :
+                      "bg-white/20"
+                  }`}
                 style={{
                   width: `${Math.max(5, Math.min(100, (1000 - distanceToTarget) / 10))}%`,
                 }}
@@ -587,38 +584,37 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
       )}
 
       {/* Sidebar */}
-      <div className={`fixed left-0 ${userLocation ? "top-40" : "top-16"} bottom-0 w-80 bg-black border-r border-cyan-400 overflow-y-auto z-10`}>
-        <div className="p-4">
-          <div className="mb-6">
-            <h2 className="font-bold text-xl text-cyan-400 mb-3">QUEST DETAILS</h2>
-            <div className="bg-zinc-900 rounded border border-cyan-400 p-4">
-              <h3 className="font-bold text-lg text-white mb-2">{destination.name}</h3>
-              <p className="text-sm text-white mb-3">{destination.description}</p>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-cyan-400 font-bold text-sm">DIFFICULTY:</span>
-                  <Badge className="bg-orange-600 text-black font-bold text-xs">
-                    {destination.difficulty.toUpperCase()}
-                  </Badge>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-cyan-400 font-bold text-sm">XP REWARD:</span>
-                  <span className="text-yellow-500 font-bold">+{destination.xpReward || 100}XP</span>
-                </div>
-
-                {userLocation && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-cyan-400 font-bold text-sm">DISTANCE:</span>
-                    <span className="text-white font-bold">
-                      {distanceToTarget < 1000
-                        ? `${Math.round(distanceToTarget)}m`
-                        : `${(distanceToTarget / 1000).toFixed(2)}km`}
-                    </span>
-                  </div>
-                )}
+      <div className={`fixed left-0 ${userLocation ? "top-40" : "top-16"} bottom-0 w-80 bg-[#050505] border-r border-white/10 overflow-y-auto z-10`}>
+        <div className="p-6">
+          <div className="mb-8">
+            <h2 className="font-bold text-xs text-gray-500 mb-4 tracking-widest uppercase border-b border-white/10 pb-2">MISSION INTEL</h2>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-bold text-xl text-white mb-2">{destination.name}</h3>
+                <p className="text-xs text-gray-400 leading-relaxed">{destination.description}</p>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 p-3 border-l border-white/20">
+                  <span className="text-[10px] text-gray-500 block mb-1 tracking-widest">DIFFICULTY</span>
+                  <span className="text-white font-bold text-sm">{destination.difficulty}</span>
+                </div>
+                <div className="bg-white/5 p-3 border-l border-white/20">
+                  <span className="text-[10px] text-gray-500 block mb-1 tracking-widest">REWARD</span>
+                  <span className="text-white font-bold text-sm">+{destination.xpReward || 100}XP</span>
+                </div>
+              </div>
+
+              {userLocation && (
+                <div className="bg-white/5 p-3 border-l border-white/20">
+                  <span className="text-[10px] text-gray-500 block mb-1 tracking-widest">DISTANCE</span>
+                  <span className="text-white font-bold text-sm">
+                    {distanceToTarget < 1000
+                      ? `${Math.round(distanceToTarget)}m`
+                      : `${(distanceToTarget / 1000).toFixed(2)}km`}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -629,17 +625,17 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
                 onClick={handleCheckIn}
                 disabled={checkingIn}
                 size="lg"
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3"
+                className="w-full bg-white text-black hover:bg-gray-200 font-bold py-6 tracking-widest uppercase rounded-none"
               >
                 {checkingIn ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    CHECKING IN...
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    VERIFYING...
                   </>
                 ) : (
                   <>
-                    <Trophy className="w-5 h-5 mr-2" />
-                    COMPLETE QUEST
+                    <Trophy className="w-4 h-4 mr-2" />
+                    [ CLAIM REWARD ]
                   </>
                 )}
               </Button>
@@ -648,35 +644,35 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
 
           {/* GPS Status */}
           {!userLocation && (
-            <div className="bg-orange-900 border border-orange-500 rounded p-4">
-              <p className="text-orange-400 font-bold text-sm mb-3">GPS REQUIRED</p>
+            <div className="bg-white/5 border border-white/10 p-4 text-center">
+              <p className="text-gray-400 text-xs mb-4 tracking-widest">SIGNAL LOST</p>
               <Button
                 onClick={requestLocation}
                 disabled={isRequestingLocation}
-                className="w-full bg-cyan-400 text-black font-bold"
+                className="w-full bg-transparent border border-white/20 text-white hover:bg-white hover:text-black font-bold tracking-widest uppercase rounded-none"
               >
                 {isRequestingLocation ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ACTIVATING...
+                    <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                    SEARCHING...
                   </>
                 ) : (
-                  "ACTIVATE GPS"
+                  "ESTABLISH UPLINK"
                 )}
               </Button>
             </div>
           )}
 
           {locationError && (
-            <div className="mt-4 bg-red-900 border border-red-500 rounded p-4">
-              <p className="text-red-400 font-bold text-sm">{locationError}</p>
+            <div className="mt-4 p-4 border-l-2 border-red-500 bg-red-500/10">
+              <p className="text-red-400 text-xs font-mono">{locationError}</p>
             </div>
           )}
         </div>
       </div>
 
       {/* Map View - Only render when fully ready to prevent hydration issues */}
-      <div 
+      <div
         className={`fixed left-80 ${userLocation ? "top-40" : "top-16"} right-0 bottom-0`}
         style={{ zIndex: 1 }}
       >
