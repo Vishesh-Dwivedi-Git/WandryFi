@@ -23,7 +23,11 @@ import NavigationView from "@/components/navigation-view";
 
 export type PageType = "explore" | "leaderboard" | "my-travel";
 
-export default function MainApp() {
+interface MainAppProps {
+  onBackToLanding?: () => void;
+}
+
+export default function MainApp({ onBackToLanding }: MainAppProps) {
   const [currentPage, setCurrentPage] = useState<PageType>("explore");
   const [showNavigationView, setShowNavigationView] = useState(false);
   const [activeDestination, setActiveDestination] =
@@ -57,7 +61,11 @@ export default function MainApp() {
         }}
       />
 
-      <Navbar currentPage={currentPage} onPageChange={setCurrentPage} />
+      <Navbar
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onLogoClick={onBackToLanding}
+      />
       <main className="pt-24 relative z-10 px-6 container mx-auto">
         {currentPage === "explore" && <ExplorePage />}
         {currentPage === "leaderboard" && <LeaderboardPage />}

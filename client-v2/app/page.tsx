@@ -12,10 +12,18 @@ export default function Home() {
     setIsConnected(true);
   };
 
+  const handleBackToLanding = () => {
+    setIsConnected(false);
+  };
+
   return (
     <WanderfyProvider>
       <div className="min-h-screen bg-background">
-        {!isConnected ? <LandingPage onConnect={handleConnect} /> : <MainApp />}
+        {!isConnected ? (
+          <LandingPage onConnect={handleConnect} />
+        ) : (
+          <MainApp onBackToLanding={handleBackToLanding} />
+        )}
       </div>
     </WanderfyProvider>
   );

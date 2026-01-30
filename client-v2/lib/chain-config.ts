@@ -11,7 +11,7 @@ export const CHAIN_CONFIGS: Record<number, ChainConfig> = {
   10143: {
     chainId: 10143,
     name: "Monad Testnet",
-    contractAddress: "0x022121411877937ac908A7E73B4F3115A0ACCE", // Replace with actual deployed address
+    contractAddress: "0x26c5FeC3C293D2b755ab5ce60BbE231671f1eeD0", // Deployed on Monad Testnet
     rpcUrl: "https://testnet-rpc.monad.xyz",
     blockExplorer: "https://testnet.monad.xyz",
   },

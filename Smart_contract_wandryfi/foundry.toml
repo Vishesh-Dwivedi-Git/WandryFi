@@ -9,7 +9,7 @@ optimizer_runs = 10000
 # # Monad Configuration
 # eth-rpc-url="https://testnet-rpc.monad.xyz"
 # chain_id = 10143
-chain_id = 31337
+chain_id = 10143
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
 remappings = [

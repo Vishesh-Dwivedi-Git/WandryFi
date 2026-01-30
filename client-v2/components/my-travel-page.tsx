@@ -278,10 +278,21 @@ const TrophyCard = ({ tokenId }: { tokenId: bigint }) => {
     }
   );
   // Support both named struct object and tuple array returns
+  // Contract struct: { destinationId[0], completionDate[1], stakedAmount[2], rewardEarned[3], destinationName[4] }
   const nftDetails = (() => {
     if (!nftDetailsData) return undefined;
     const d: any = nftDetailsData as any;
-    const destinationName: string | undefined = d?.destinationName ?? d?.[4];
+
+    // Parse destinationId
+    const rawDestId = d?.destinationId ?? d?.[0];
+    const destinationId: bigint | undefined =
+      typeof rawDestId === "bigint"
+        ? rawDestId
+        : rawDestId != null
+          ? BigInt(rawDestId)
+          : undefined;
+
+    // Parse completionDate
     const rawCompletion = d?.completionDate ?? d?.[1];
     const completionDate: bigint | undefined =
       typeof rawCompletion === "bigint"
@@ -289,10 +300,49 @@ const TrophyCard = ({ tokenId }: { tokenId: bigint }) => {
         : rawCompletion != null
           ? BigInt(rawCompletion)
           : undefined;
-    if (!destinationName || completionDate == null) return undefined;
-    return { destinationName, completionDate } as {
+
+    // Parse stakedAmount
+    const rawStaked = d?.stakedAmount ?? d?.[2];
+    const stakedAmount: bigint | undefined =
+      typeof rawStaked === "bigint"
+        ? rawStaked
+        : rawStaked != null
+          ? BigInt(rawStaked)
+          : undefined;
+
+    // Parse rewardEarned (index 3, not 2!)
+    const rawReward = d?.rewardEarned ?? d?.[3];
+    const rewardEarned: bigint | undefined =
+      typeof rawReward === "bigint"
+        ? rawReward
+        : rawReward != null
+          ? BigInt(rawReward)
+          : undefined;
+
+    // Parse destinationName - may be empty string from contract
+    const rawName = d?.destinationName ?? d?.[4];
+    const destinationName: string = rawName || "";
+
+    // Only require completionDate and destinationId to exist
+    if (destinationId == null || completionDate == null) return undefined;
+
+    // Get fallback name from local data if contract name is empty
+    const destIdStr = destinationId.toString();
+    const localDest = destinationsById[destIdStr];
+    const displayName = destinationName || localDest?.name || `Destination #${destIdStr}`;
+
+    return {
+      destinationName: displayName,
+      completionDate,
+      rewardEarned,
+      stakedAmount,
+      destinationId
+    } as {
       destinationName: string;
       completionDate: bigint;
+      rewardEarned?: bigint;
+      stakedAmount?: bigint;
+      destinationId: bigint;
     };
   })();
 
@@ -347,7 +397,7 @@ const TrophyCard = ({ tokenId }: { tokenId: bigint }) => {
   }, [tokenUri, isLoadingUri]);
 
   if (isLoadingDetails || isLoadingMetadata) {
-    return <Skeleton className="aspect-square rounded-lg" />;
+    return <Skeleton className="aspect-[3/4] rounded-lg" />;
   }
 
   if (!nftDetails) return null;
@@ -356,39 +406,132 @@ const TrophyCard = ({ tokenId }: { tokenId: bigint }) => {
     metadata?.attributes
       ?.find((a) => a.trait_type === "Rarity")
       ?.value?.toLowerCase() || "common";
-  const icon =
-    metadata?.attributes
-      ?.find((a) => a.trait_type === "Icon")
-      ?.value?.toLowerCase() || "ruins";
+
+  // Get destination image from static data
+  const destId = nftDetails.destinationId?.toString() || "1";
+  const destinationData = destinationsById[destId];
+  const destinationImage = destinationData?.image
+    ? (typeof destinationData.image === "string" ? destinationData.image : destinationData.image.src)
+    : null;
+
+  // Format reward earned and total payout
+  const rewardEarnedFormatted = nftDetails.rewardEarned
+    ? parseFloat(formatEther(nftDetails.rewardEarned)).toFixed(4)
+    : "0.0000";
+  const stakedFormatted = nftDetails.stakedAmount
+    ? parseFloat(formatEther(nftDetails.stakedAmount)).toFixed(4)
+    : "0.0000";
+  // Total payout = stake + reward
+  const totalPayout = (nftDetails.stakedAmount || BigInt(0)) + (nftDetails.rewardEarned || BigInt(0));
+  const totalFormatted = parseFloat(formatEther(totalPayout)).toFixed(4);
+
+  const getRarityBadge = (rarity: string) => {
+    switch (rarity) {
+      case "legendary":
+        return { bg: "bg-gradient-to-r from-yellow-500 to-amber-600", text: "text-black", label: "LEGENDARY" };
+      case "rare":
+        return { bg: "bg-gradient-to-r from-purple-500 to-indigo-600", text: "text-white", label: "RARE" };
+      default:
+        return { bg: "bg-white/20", text: "text-white", label: "COMMON" };
+    }
+  };
+
+  const rarityBadge = getRarityBadge(rarity);
 
   return (
     <div
       className={cn(
-        "aspect-square border p-4 flex flex-col items-center justify-center group hover:border-white/50 transition-all duration-300 relative overflow-hidden",
-        getRarityColor(rarity)
+        "relative border overflow-hidden group hover:border-white/50 transition-all duration-300",
+        "bg-gradient-to-br from-white/[0.08] to-white/[0.02]",
+        rarity === "legendary" ? "border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.2)]" :
+          rarity === "rare" ? "border-purple-500/30" : "border-white/10"
       )}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="w-12 h-12 mb-4 relative z-10 opacity-80 group-hover:opacity-100 transition-opacity">
+      {/* NFT Image / Destination Image */}
+      <div className="relative aspect-square overflow-hidden bg-black">
         {metadata?.image ? (
           <img
-            src={metadata.image}
+            src={metadata.image.startsWith("ipfs://")
+              ? metadata.image.replace("ipfs://", "https://ipfs.io/ipfs/")
+              : metadata.image}
             alt={nftDetails.destinationName}
-            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : destinationImage ? (
+          <img
+            src={destinationImage}
+            alt={nftDetails.destinationName}
+            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110"
           />
         ) : (
-          getPixelIcon(icon)
+          <div className="w-full h-full flex items-center justify-center bg-white/5">
+            <div className="w-16 h-16 text-white/20">
+              {getPixelIcon("ruins")}
+            </div>
+          </div>
         )}
+
+        {/* Trophy Overlay Icon */}
+        <div className="absolute top-2 right-2 w-10 h-10 bg-black/70 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center">
+          <span className="text-xl">🏆</span>
+        </div>
+
+        {/* Rarity Badge */}
+        <div className="absolute top-2 left-2">
+          <span className={cn(
+            "px-2 py-0.5 text-[8px] font-bold tracking-widest uppercase",
+            rarityBadge.bg, rarityBadge.text
+          )}>
+            {rarityBadge.label}
+          </span>
+        </div>
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80" />
+
+        {/* Bottom Content */}
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          {/* Place Name */}
+          <h3 className="font-bold text-sm text-white uppercase tracking-wider mb-1 line-clamp-1">
+            {nftDetails.destinationName}
+          </h3>
+
+          {/* Completion Date */}
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">
+            {new Date(Number(nftDetails.completionDate) * 1000).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric"
+            })}
+          </p>
+
+          {/* Amount Earned */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between bg-white/10 backdrop-blur-sm border border-white/10 px-2 py-1.5">
+              <span className="text-[9px] text-gray-400 uppercase tracking-widest">Total Received</span>
+              <span className="font-mono text-sm text-green-400 font-bold">
+                {totalFormatted} <span className="text-[10px] text-gray-500">TMON</span>
+              </span>
+            </div>
+            {parseFloat(rewardEarnedFormatted) > 0 && (
+              <div className="flex items-center justify-between px-2 py-1">
+                <span className="text-[8px] text-gray-500 uppercase tracking-widest">Bonus Reward</span>
+                <span className="font-mono text-xs text-cyan-400">
+                  +{rewardEarnedFormatted} <span className="text-[9px] text-gray-600">TMON</span>
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-      <div className="text-center relative z-10">
-        <p className="font-bold text-[10px] uppercase tracking-widest mb-1 line-clamp-2">
-          {nftDetails.destinationName}
-        </p>
-        <p className="text-[9px] opacity-60 uppercase tracking-wider">
-          {new Date(
-            Number(nftDetails.completionDate) * 1000
-          ).toLocaleDateString()}
-        </p>
+
+      {/* Token ID Footer */}
+      <div className="px-3 py-2 bg-black/50 border-t border-white/5 flex items-center justify-between">
+        <span className="text-[9px] text-gray-600 uppercase tracking-widest">NFT #{tokenId.toString()}</span>
+        <div className="flex items-center gap-1">
+          <span className="text-[9px] text-gray-500">🎖️</span>
+          <span className="text-[9px] text-white/60 uppercase tracking-wider">Journey Badge</span>
+        </div>
       </div>
     </div>
   );
@@ -759,7 +902,7 @@ const MyTravelPage = ({ onNavigationView }: MyTravelPageProps) => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {trophies.map((tokenId: bigint) => (
                   <TrophyCard key={tokenId.toString()} tokenId={tokenId} />
                 ))}

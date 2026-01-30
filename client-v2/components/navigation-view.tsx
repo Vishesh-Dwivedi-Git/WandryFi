@@ -422,7 +422,17 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
   }, []);
 
   const handleCheckIn = async () => {
-    if (distanceToTarget > 50) return;
+    console.log("========================================");
+    console.log("🎯 handleCheckIn called");
+    console.log("📍 User Location:", userLocation);
+    console.log("🗺️ Destination:", destination);
+    console.log("📏 Distance to Target:", distanceToTarget);
+    console.log("✅ Is in range (<50m):", distanceToTarget <= 50);
+
+    if (distanceToTarget > 50) {
+      console.log("❌ Distance > 50m, aborting check-in");
+      return;
+    }
     if (!address) {
       setLocationError("Please connect your wallet");
       return;
@@ -435,27 +445,39 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
     setCheckingIn(true);
 
     try {
+      const requestBody = {
+        walletAddress: address,
+        destinationId: destination.id,
+        userLat: userLocation.lat,
+        userLon: userLocation.lng,
+      };
+
+      console.log("📤 Sending to API:", requestBody);
+
+      // Use environment variable for backend URL, fallback to localhost for development
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+      console.log("🔗 API URL:", backendUrl + "/api/verify");
+
       // Call backend verification service
-      const response = await fetch("http://localhost:3001/api/verify", {
+      const response = await fetch(`${backendUrl}/api/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "7987",
         },
-        body: JSON.stringify({
-          walletAddress: address,
-          destinationId: destination.id,
-          userLat: userLocation.lat,
-          userLon: userLocation.lng,
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log("📥 Response status:", response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.log("❌ Error response:", errorData);
         throw new Error(errorData.error || "Verification failed");
       }
 
       const { signature } = await response.json();
+      console.log("✅ Got signature:", signature);
 
       // Call smart contract checkIn function
       await writeContract({
@@ -474,10 +496,11 @@ export default function NavigationView({ destination, onClose }: NavigationViewP
         onClose();
       }, 3000);
     } catch (error) {
-      console.error("Check-in failed:", error);
+      console.error("❌ Check-in failed:", error);
       setLocationError(error instanceof Error ? error.message : "Check-in failed");
       setCheckingIn(false);
     }
+    console.log("========================================");
   };
 
   const isInRange = distanceToTarget <= 50;
