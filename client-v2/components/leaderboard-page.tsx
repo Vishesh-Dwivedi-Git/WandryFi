@@ -81,67 +81,86 @@ export default function LeaderboardPage() {
   // Helper component for rendering a player row to avoid repetition
   const PlayerRow = ({ player }: { player: LeaderboardPlayer }) => (
     <div className="grid grid-cols-4 gap-4 items-center">
-      <div className="font-pixel text-lg">
+      <div className="font-mono text-lg font-bold">
         <span
-          className={player.rank <= 3 ? "text-neon-gold" : "text-foreground"}
+          className={player.rank <= 3 ? "text-white" : "text-gray-500"}
         >
-          #{player.rank}
+          {player.rank <= 3 ? `[ 0${player.rank} ]` : `#${player.rank}`}
         </span>
       </div>
-      <div className="font-mono text-sm text-muted-foreground truncate">
+      <div className="font-mono text-sm text-gray-400 truncate tracking-wider">
         {player.address}
       </div>
-      <div className="font-pixel text-neon-cyan">
-        {player.score.toLocaleString()} WNDR
+      <div className="font-mono text-white font-bold tracking-widest text-right pr-8">
+        {player.score.toLocaleString()} <span className="text-gray-600 text-xs">WNDR</span>
       </div>
-      <div className="text-2xl">{player.badge}</div>
+      <div className="text-xl flex justify-center grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all">{player.badge}</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="font-pixel text-3xl text-neon-cyan mb-8 text-center">
-          Leaderboard
-        </h1>
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="bg-muted/50 px-6 py-4 border-b border-border">
-            <div className="grid grid-cols-4 gap-4 font-pixel text-sm text-muted-foreground">
+    <div className="min-h-screen p-6 font-mono text-[#E0E0E0]">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-12 border-b border-white/10 pb-6 flex justify-between items-end">
+          <div>
+            <h1 className="text-4xl font-bold text-white tracking-widest uppercase mb-2">Network [ RANKING ]</h1>
+            <p className="text-gray-500 text-xs tracking-wider">Global consensus participation metrics.</p>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-gray-600 uppercase tracking-widest mb-1">Total Participants</div>
+            <div className="text-2xl font-bold text-white">{processedLeaderboardData.length}</div>
+          </div>
+        </div>
+
+        <div className="bg-white/5 border border-white/10 overflow-hidden">
+          <div className="bg-white/5 px-6 py-4 border-b border-white/10">
+            <div className="grid grid-cols-4 gap-4 font-bold text-[10px] uppercase tracking-widest text-gray-500">
               <div>Rank</div>
-              <div>Explorer</div>
-              <div>Score</div>
-              <div>Badge</div>
+              <div>Node Address</div>
+              <div className="text-right pr-8">Contribution Score</div>
+              <div className="text-center">Status</div>
             </div>
           </div>
 
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-white/5">
             {isLoading
               ? // 4. Show a loading skeleton while data is being fetched
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="px-6 py-4">
-                    <div className="grid grid-cols-4 gap-4 items-center">
-                      <Skeleton className="h-6 w-10" />
-                      <Skeleton className="h-6 w-32" />
-                      <Skeleton className="h-6 w-24" />
-                      <Skeleton className="h-6 w-8" />
-                    </div>
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="px-6 py-4">
+                  <div className="grid grid-cols-4 gap-4 items-center">
+                    <Skeleton className="h-6 w-10 bg-white/10 rounded-none" />
+                    <Skeleton className="h-6 w-32 bg-white/10 rounded-none" />
+                    <Skeleton className="h-6 w-24 bg-white/10 rounded-none" />
+                    <Skeleton className="h-6 w-8 bg-white/10 rounded-none" />
                   </div>
-                ))
+                </div>
+              ))
               : // 5. Map over the PROCESSED data, not the hardcoded array
-                processedLeaderboardData.map((player) => (
-                  <div
-                    key={player.address}
-                    className="px-6 py-4 hover:bg-muted/30 transition-colors duration-200"
-                  >
-                    <PlayerRow player={player} />
-                  </div>
-                ))}
+              processedLeaderboardData.map((player) => (
+                <div
+                  key={player.address}
+                  className="px-6 py-4 hover:bg-white/5 transition-colors duration-200"
+                >
+                  <PlayerRow player={player} />
+                </div>
+              ))}
           </div>
 
           {/* 6. Display the current user's rank at the bottom if they are connected and in the list */}
           {connectedAddress && currentUserData && (
-            <div className="px-6 py-4 bg-neon-cyan/10 border-t-2 border-neon-cyan">
-              <PlayerRow player={currentUserData} />
+            <div className="px-6 py-6 bg-white text-black border-t border-white/20">
+              <div className="grid grid-cols-4 gap-4 items-center">
+                <div className="font-mono text-lg font-bold">
+                  <span className="text-black">{`[ 0${currentUserData.rank} ]`}</span>
+                </div>
+                <div className="font-mono text-sm text-black truncate tracking-wider font-bold">
+                  {currentUserData.address} <span className="ml-2 text-[10px] uppercase bg-black text-white px-2 py-0.5 rounded-none">YOU</span>
+                </div>
+                <div className="font-mono text-black font-bold tracking-widest text-right pr-8">
+                  {currentUserData.score.toLocaleString()} <span className="text-gray-600 text-xs">WNDR</span>
+                </div>
+                <div className="text-xl flex justify-center">{currentUserData.badge}</div>
+              </div>
             </div>
           )}
         </div>
