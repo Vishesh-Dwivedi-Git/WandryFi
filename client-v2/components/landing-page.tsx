@@ -61,24 +61,30 @@ export default function LandingPage({ onConnect }: LandingPageProps) {
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed top-0 w-full z-50 px-8 py-4 flex justify-between items-center bg-black/80 backdrop-blur-md border-b border-white/5"
+        className="fixed top-0 w-full z-50 px-4 md:px-8 py-3 md:py-4 flex justify-between items-center bg-black/90 backdrop-blur-md border-b border-white/5"
       >
-        <div className="flex gap-6 text-xs font-mono tracking-widest text-gray-500">
+        {/* Left: Nav Links (hidden on mobile) */}
+        <div className="hidden md:flex gap-6 text-xs font-mono tracking-widest text-gray-500">
           <span className="hover:text-white cursor-pointer transition-colors">// HOW IT WORKS</span>
           <span className="hover:text-white cursor-pointer transition-colors">// DESTINATIONS</span>
           <span className="hover:text-white cursor-pointer transition-colors">// FAQ</span>
         </div>
 
-        <div className="font-sans font-bold text-xl tracking-tighter flex items-center gap-2">
+        {/* Center: Logo */}
+        <div className="font-sans font-bold text-lg md:text-xl tracking-tighter flex items-center gap-2">
           <span className="text-white">Wanderify</span><span className="text-gray-600">Network.</span>
         </div>
 
-        <div className="flex gap-4">
-          <BracketButton variant="secondary" onClick={() => window.open('https://github.com', '_blank')}>
-            open [GITHUB]
-          </BracketButton>
+        {/* Right: Buttons */}
+        <div className="flex gap-2 md:gap-4">
+          {/* GitHub button - hidden on small mobile */}
+          <div className="hidden sm:block">
+            <BracketButton variant="secondary" onClick={() => window.open('https://github.com', '_blank')}>
+              <span className="hidden lg:inline">open </span>[GITHUB]
+            </BracketButton>
+          </div>
           <BracketButton onClick={onConnect}>
-            start [JOURNEY]
+            <span className="hidden sm:inline">start </span>[JOURNEY]
           </BracketButton>
         </div>
       </motion.nav>
