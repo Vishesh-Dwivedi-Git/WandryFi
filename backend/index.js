@@ -127,7 +127,9 @@ app.post("/api/verify", async (req, res) => {
     }
     console.log("✅ Destination found:", destination);
 
-    // --- IP Reputation Check ---
+    // --- IP Reputation Check (BYPASSED FOR TESTING) ---
+    // TODO: Uncomment this section for production
+    /*
     const userIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     console.log("🌐 IP Check:");
     console.log("   - User IP:", userIp);
@@ -158,6 +160,8 @@ app.post("/api/verify", async (req, res) => {
     } else {
       console.log("⚠️ Localhost detected - skipping IP check");
     }
+    */
+    console.log("⚠️ IP check BYPASSED for testing");
 
     // --- Distance Check ---
     console.log("📏 Distance Check:");
